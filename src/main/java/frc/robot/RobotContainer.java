@@ -17,6 +17,8 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.OuttakeSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -35,11 +37,17 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    private IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
+    private OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
+
     public RobotContainer() {
         configureBindings();
     }
 
     private void configureBindings() {
+        joystick.rightTrigger().onTrue(Commands.sequence(m_IntakeSubsystem.intakeCommand()));
+        joystick.rightBumper().onTrue(Commands.sequence(m_OuttakeSubsystem.outtakeCommand()));
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
