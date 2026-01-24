@@ -36,7 +36,6 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
     private IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     private OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
 
