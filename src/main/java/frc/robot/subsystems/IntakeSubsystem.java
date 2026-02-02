@@ -10,6 +10,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import static frc.robot.Constants.Constants.Intake.*;
+
 public class IntakeSubsystem extends SubsystemBase {
   TalonFX m_intakeMotor1;
   TalonFX m_intakeMotor2;
@@ -18,11 +20,12 @@ public class IntakeSubsystem extends SubsystemBase {
   DutyCycleOut speed;
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    m_intakeMotor1 = new TalonFX(0);
-    m_intakeMotor2 = new TalonFX(1);
-    m_intakeMoter3 = new TalonFX(2);
-    m_intakeMoter4 = new TalonFX(3);
-    speed = new DutyCycleOut(0);
+    m_intakeMotor1 = new TalonFX(IN_OUT_TAKE_MOTOR1_ID);
+    m_intakeMotor2 = new TalonFX(IN_OUT_TAKE_MOTOR2_ID);
+    m_intakeMoter3 = new TalonFX(TAKE_MOTOR1_ID);
+    m_intakeMoter4 = new TalonFX(TAKE_MOTOR2_ID);
+
+    speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   }
 
   @Override
@@ -32,31 +35,52 @@ public class IntakeSubsystem extends SubsystemBase {
   public void deoplyInTake(){
     m_intakeMotor1.setControl(speed);
     m_intakeMotor2.setControl(speed);
-    m_intakeMotor1.set(1);
-    m_intakeMotor2.set(1);
+
+    m_intakeMotor1.set(IN_TAKE_SPEED);
+    m_intakeMotor2.set(IN_TAKE_SPEED);
   }
   public void runIntake() { 
     m_intakeMoter3.setControl(speed);
     m_intakeMoter4.setControl(speed);
-    m_intakeMoter3.set(1);
-    m_intakeMoter4.set(1);
+
+    m_intakeMoter3.set(TAKE_SPEED);
+    m_intakeMoter4.set(TAKE_SPEED);
   }
   public void undeoplyInTake(){
     m_intakeMotor1.setControl(speed);
     m_intakeMotor2.setControl(speed);
-    m_intakeMotor1.set(-1);
-    m_intakeMotor2.set(-1);
+
+    m_intakeMotor1.set(OUT_TAKE_SPEED);
+    m_intakeMotor2.set(OUT_TAKE_SPEED);
+  }
+
+  public void stopInOutTake() {
+    m_intakeMotor1.set(0);
+    m_intakeMotor2.set(0);
+  }
+
+  public void stopTake() {
+    m_intakeMoter3.set(0);
+    m_intakeMoter4.set(0);
   }
 
   public Command deployIntakeCommand() {
-    return runOnce(this::deoplyInTake);
+    return run(this::deoplyInTake);
   }
 
   public Command runIntakeCommand() {
-    return runOnce(this::runIntake);
+    return run(this::runIntake);
   }
 
   public Command undeployIntakeCommand() {
-    return runOnce(this::undeoplyInTake);
+    return run(this::undeoplyInTake);
+  }
+
+  public Command stopInOutTakeCommand() {
+    return runOnce(this::stopInOutTake);
+  }
+
+  public Command stopTakeCommand() {
+    return runOnce(this::stopTake);
   }
 }

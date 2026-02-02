@@ -10,10 +10,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import static frc.robot.Constants.Constants.Climb.*;
+
 public class ClimbSubsystem extends SubsystemBase {
-  TalonFX m_climbmotor1 = new TalonFX(0);
-    TalonFX m_climbmotor2 = new TalonFX(89);
-    DutyCycleOut speed = new DutyCycleOut(0);
+  TalonFX m_climbmotor1 = new TalonFX(CLIMB_MOTOR_1_ID);
+    TalonFX m_climbmotor2 = new TalonFX(CLIMB_MOTOR_2_ID);
+    DutyCycleOut speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   /** Creates a new ClimbSubsystem. */
   public ClimbSubsystem() {
     
@@ -28,20 +30,30 @@ public class ClimbSubsystem extends SubsystemBase {
     m_climbmotor1.setControl(speed);
     m_climbmotor2.setControl(speed);
 
-    m_climbmotor1.set(1);
-    m_climbmotor2.set(1);
+    m_climbmotor1.set(UP_CLIMB_SPEED);
+    m_climbmotor2.set(UP_CLIMB_SPEED);
   }
   public void climbDown() {
     m_climbmotor1.setControl(speed);
     m_climbmotor2.setControl(speed);
 
-    m_climbmotor1.set(-1);
-    m_climbmotor2.set(-1);
+    m_climbmotor1.set(DOWN_CLIMB_SPEED);
+    m_climbmotor2.set(DOWN_CLIMB_SPEED);
   }
+
+  public void stopMotors() {
+    m_climbmotor1.set(0);
+    m_climbmotor2.set(0);
+  }
+
   public Command climbUpCommand() {
-    return runOnce(this::climbUp);
+    return run(this::climbUp);
   }
    public Command climbDownCommand() {
-    return runOnce(this::climbDown);
+    return run(this::climbDown);
+  }
+
+  public Command stopClimbCommand() {
+    return runOnce(this::stopMotors);
   }
 }
