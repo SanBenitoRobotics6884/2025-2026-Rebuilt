@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import java.util.List;
 
 import org.photonvision.PhotonCamera;
-import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
@@ -15,8 +14,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class VisionSusbsytem extends SubsystemBase {
   PhotonCamera m_randomAssCamera = new PhotonCamera("HD_USB_CAMERA");
-  List<PhotonPipelineResult> unreadresults = m_randomAssCamera.getAllUnreadResults();
-  PhotonTrackedTarget target = m_randomAssCamera.getAllUnreadResults().get(0).getBestTarget();
+  List<PhotonPipelineResult> unreadResults = m_randomAssCamera.getAllUnreadResults();
+  PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
   
 
   /** Creates a new VisionSusbsytem. */
