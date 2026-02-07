@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.List;
 
 import org.photonvision.PhotonCamera;
@@ -25,6 +26,14 @@ public class VisionSusbsytem extends SubsystemBase {
 
   @Override
   public void periodic() {
+    if (!unreadResults.isEmpty()) {
+      var result = unreadResults.get(unreadResults.size() - 1);
+      if (result.hasTargets()) {
+        for (var target : result.getTargets()) {
+          
+        }
+      }
+    }
     // This method will be called once per scheduler run
   }
 }
