@@ -1,5 +1,7 @@
 package frc.robot.Constants;
 
+import com.pathplanner.lib.config.RobotConfig;
+
 public class Constants {
   public class Climb {
     public static final int CLIMB_MOTOR_1_ID = 33;

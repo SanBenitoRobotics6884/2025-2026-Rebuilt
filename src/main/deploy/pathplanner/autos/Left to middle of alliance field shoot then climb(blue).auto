@@ -51,6 +51,18 @@
           "data": {
             "name": "stopClimbCommand"
           }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "climbDownCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopClimbCommand"
+          }
         }
       ]
     }
