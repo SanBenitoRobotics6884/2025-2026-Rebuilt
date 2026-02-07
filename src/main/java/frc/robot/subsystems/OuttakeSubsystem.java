@@ -8,15 +8,20 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import static frc.robot.Constants.Constants.Outtake.*;
+
 public class OuttakeSubsystem extends SubsystemBase {
-  TalonFX m_outtakeMotor;
+  TalonFX m_outtakeMotor1;
+  TalonFX m_outtakeMotor2;
   DutyCycleOut speed;
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
-    m_outtakeMotor = new TalonFX(0);
-    speed = new DutyCycleOut(0);
+    m_outtakeMotor1 = new TalonFX(OUT_MOTOR1_ID);
+    m_outtakeMotor2 = new TalonFX(OUT_MOTOR2_ID);
+    speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   }
 
   @Override
@@ -25,6 +30,22 @@ public class OuttakeSubsystem extends SubsystemBase {
   }
 
   public void runOuttake() {
-    m_outtakeMotor.setControl(speed);
+    m_outtakeMotor1.setControl(speed);
+    m_outtakeMotor2.setControl(speed);
+    m_outtakeMotor1.set(-OUTTAKE_SPEED);
+    m_outtakeMotor2.set(OUTTAKE_SPEED);
+  }
+
+  public void stopOuttake() {
+    m_outtakeMotor1.set(0);
+    m_outtakeMotor2.set(0);
+  }
+
+  public Command runOuttakecommand() {
+    return run(this::runOuttake);
+  }
+
+  public Command stopOuttakeCommand() {
+    return runOnce(this::stopOuttake);
   }
 }
