@@ -60,21 +60,27 @@ public class RobotContainer {
 
 
     public RobotContainer() {
+        drivetrain.DriveSubsystem();
+        if (AutoBuilder.isConfigured()) {
+            System.out.print("it is configured");
+        }
         //config
 
      // For convenience a programmer could change this when going to competition.
-    boolean isCompetition = true;
+     autoChooser = AutoBuilder.buildAutoChooser();
 
-    // Build an auto chooser. This will use Commands.none() as the default option.
-    // As an example, this will only show autos that start with "comp" while at
-    // competition as defined by the programmer
-    autoChooser = AutoBuilder.buildAutoChooserWithOptionsModifier(
-      (stream) -> isCompetition
-        ? stream.filter(auto -> auto.getName().startsWith("comp"))
-        : stream
-    );
-
+    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
+    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
+    SmartDashboard.putData("Middle start shoot then climb", autoChooser);
+    SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
+    SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
+    SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
     SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
+    SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
+
 
 
         configureBindings();
