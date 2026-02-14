@@ -35,8 +35,7 @@ import frc.robot.subsystems.OuttakeSubsystem;
 
 
 public class RobotContainer {
-    
-     private final SendableChooser<Command> autoChooser;
+   
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed; // Reduce speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -53,7 +52,7 @@ public class RobotContainer {
     private final Joystick m_Joystick = new Joystick(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
+    private final SendableChooser<Command> autoChooser;
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     public ClimbSubsystem m_ClimbSubsystem = new ClimbSubsystem();
@@ -75,7 +74,7 @@ public class RobotContainer {
         : stream
     );
 
-    SmartDashboard.putData("Right start to middle of alliance field shoot (red)", autoChooser);
+    SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
 
 
         configureBindings();

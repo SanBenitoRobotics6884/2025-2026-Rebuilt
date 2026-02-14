@@ -5,12 +5,6 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "Left start to middle facing hub(blue)"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "runOuttakecommand"
@@ -25,13 +19,13 @@
         {
           "type": "named",
           "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopOuttakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Middle to climb base(blue)"
+            "pathName": "middle start to climb base"
           }
         },
         {
@@ -49,13 +43,13 @@
         {
           "type": "named",
           "data": {
-            "name": "stopClimbCommand"
+            "name": "climbDownCommand"
           }
         },
         {
-          "type": "named",
+          "type": "wait",
           "data": {
-            "name": "climbDownCommand"
+            "waitTime": 1.0
           }
         },
         {
