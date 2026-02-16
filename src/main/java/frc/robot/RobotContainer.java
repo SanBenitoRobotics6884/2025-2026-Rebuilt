@@ -16,6 +16,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -32,9 +33,11 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
-
+import static frc.robot.Constants.Constants.Intake.*;
 
 public class RobotContainer {
+    private DigitalInput i_limitswitchundeploy = new DigitalInput(LIMIT_SWITCH_UNDEPLOY_ID);
+
    
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed; // Reduce speed
@@ -95,6 +98,9 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+      //  i_limitSwitchdeploy.whileTrue(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
+       
+
         joystick.pov(0).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
         joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
@@ -109,6 +115,10 @@ public class RobotContainer {
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
         joystick.b().whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
+        
+         if (i_limitswitchundeploy.get()) {
+            m_IntakeSubsystem.stopInOutTakeCommand();
+        }
 
         if (m_Joystick.getRawButton(5)) {
             slowSpeed = 0.5;

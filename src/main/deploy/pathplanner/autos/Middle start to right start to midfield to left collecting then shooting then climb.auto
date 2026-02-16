@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "middle start to left start"
+            "pathName": "middle start to right start"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Left start to middle left of midfield"
+            "pathName": "Right start to right midfield"
           }
         },
         {
@@ -37,7 +37,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left of midfield to right"
+            "pathName": "Right of midfield to left"
           }
         },
         {
@@ -61,13 +61,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right of midfield back to middle of alliance field"
+            "pathName": "Left of midfield to middle left start"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right start to middle facing hub"
+            "pathName": "Left start to middle facing hub"
           }
         },
         {
