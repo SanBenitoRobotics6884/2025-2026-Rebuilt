@@ -82,7 +82,7 @@ public class TunerConstants {
 
     // CAN bus that the devices are located on;
     // All swerve devices must share the same CAN bus
-    public static final CANBus kCANBus = new CANBus("Galigma Jr", "./logs/example.hoot");
+    public static final CANBus kCANBus = new CANBus("Galigma", "./logs/example.hoot");
     
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
@@ -138,8 +138,8 @@ public class TunerConstants {
 
 
     // Front Left
-    private static final int kFrontLeftDriveMotorId = 5;
-    private static final int kFrontLeftSteerMotorId = 4;
+    private static final int kFrontLeftDriveMotorId = 1;
+    private static final int kFrontLeftSteerMotorId = 2;
     private static final int kFrontLeftEncoderId = 0;
     private static final Angle kFrontLeftEncoderOffset = Rotations.of(-0.47216796875);
     private static final boolean kFrontLeftSteerMotorInverted = false;
@@ -149,8 +149,8 @@ public class TunerConstants {
     private static final Distance kFrontLeftYPos = Inches.of(10.875);
 
     // Front Right
-    private static final int kFrontRightDriveMotorId = 27;
-    private static final int kFrontRightSteerMotorId = 0;
+    private static final int kFrontRightDriveMotorId = 3;
+    private static final int kFrontRightSteerMotorId = 4;
     private static final int kFrontRightEncoderId = 3;
     private static final Angle kFrontRightEncoderOffset = Rotations.of(-0.16357421875);
     private static final boolean kFrontRightSteerMotorInverted = false;
@@ -160,7 +160,7 @@ public class TunerConstants {
     private static final Distance kFrontRightYPos = Inches.of(-10.875);
 
     // Back Left
-    private static final int kBackLeftDriveMotorId = 2;
+    private static final int kBackLeftDriveMotorId = 5;
     private static final int kBackLeftSteerMotorId = 6;
     private static final int kBackLeftEncoderId = 2;
     private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.193115234375);
@@ -171,8 +171,8 @@ public class TunerConstants {
     private static final Distance kBackLeftYPos = Inches.of(10.875);
 
     // Back Right
-    private static final int kBackRightDriveMotorId = 3;
-    private static final int kBackRightSteerMotorId = 1;
+    private static final int kBackRightDriveMotorId = 7;
+    private static final int kBackRightSteerMotorId = 8;
     private static final int kBackRightEncoderId = 1;
     private static final Angle kBackRightEncoderOffset = Rotations.of(0.2744140625);
     private static final boolean kBackRightSteerMotorInverted = false;

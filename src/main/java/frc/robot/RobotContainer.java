@@ -118,7 +118,7 @@ public class RobotContainer {
         
          if (i_limitswitchundeploy.get()) {
             m_IntakeSubsystem.stopInOutTakeCommand();
-        }
+        } // silly thingy here :applause:
 
         if (m_Joystick.getRawButton(5)) {
             slowSpeed = 0.5;
