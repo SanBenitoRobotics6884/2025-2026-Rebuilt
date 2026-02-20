@@ -16,11 +16,6 @@ public class Constants {
   public class Intake {
     public static final int LIMIT_SWITCH_UNDEPLOY_ID = 1;
 
-    public static final int IN_OUT_TAKE_MOTOR1_ID = 1;
-    public static final int IN_OUT_TAKE_MOTOR2_ID = 60;
-    public static final int TAKE_MOTOR1_ID = 10;
-    public static final int TAKE_MOTOR2_ID = 14;
-
     public static final double PID_P_VALUE = 4.8;
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
@@ -30,12 +25,10 @@ public class Constants {
     public static final double TAKE_SPEED = 1.0;
 
     public static final double IN_TAKE_TARGET_ROTATIONS = 50.0;
-    public static final double OUT_TAKE_TARGET_ROTATIONS = 0.0;
+    public static final double OUT_TAKE_TARGET_ROTATIONS = -50.0;
   }
 
   public class Outtake {
-    public static final int OUT_MOTOR1_ID = 31;
-    public static final int OUT_MOTOR2_ID = 32;
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
 

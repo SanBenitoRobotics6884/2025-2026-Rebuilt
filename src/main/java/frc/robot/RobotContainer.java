@@ -56,9 +56,9 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final SendableChooser<Command> autoChooser;
-    public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
-    public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
-    public ClimbSubsystem m_ClimbSubsystem = new ClimbSubsystem();
+    // public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
+    // public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
+    // public ClimbSubsystem m_ClimbSubsystem = new ClimbSubsystem();
 
 
 
@@ -88,43 +88,45 @@ public class RobotContainer {
 
         configureBindings();
     
-    NamedCommands.registerCommand("RunIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
-    NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopTakeCommand());
-    NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.deployIntakeCommand());
-    NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.undeployIntakeCommand());
-    NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopInOutTakeCommand());
-    NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
-    NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
+    // NamedCommands.registerCommand("RunIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
+    // NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopTakeCommand());
+    // NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.deployIntakeCommand());
+    // NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.undeployIntakeCommand());
+    // NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopInOutTakeCommand());
+    // NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
+    // NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
     }
 
     private void configureBindings() {
       //  i_limitSwitchdeploy.whileTrue(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
        
 
-        joystick.pov(0).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
-        joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
-        joystick.pov(270).whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        // joystick.pov(90).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+        //                        .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
+        // joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+        //                       .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
+        // joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
+        //                       .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        // joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersCommand()))
+        //             .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
 
-        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
-                               .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
+        // joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
+        //                        .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
 
-        joystick.a().whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
+        // joystick.pov(0).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
+        //             .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
+        // joystick.pov(270).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
+        //             .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
         
-         if (i_limitswitchundeploy.get()) {
-            m_IntakeSubsystem.stopInOutTakeCommand();
-        } // silly thingy here :applause:
+        //  if (i_limitswitchundeploy.get()) {
+        //     m_IntakeSubsystem.stopInOutTakeCommand();
+        // } // silly thingy here :applause:
 
-        if (m_Joystick.getRawButton(5)) {
-            slowSpeed = 0.5;
-        } else {
-            slowSpeed = 1;
-        }
+        // if (m_Joystick.getRawButton(5)) {
+        //     slowSpeed = 0.5;
+        // } else {
+        //     slowSpeed = 1;
+        // }
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(

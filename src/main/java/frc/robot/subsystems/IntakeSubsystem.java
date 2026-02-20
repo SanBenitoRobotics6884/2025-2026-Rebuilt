@@ -15,26 +15,26 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.Constants.Intake.*;
 
 public class IntakeSubsystem extends SubsystemBase {
-  TalonFX m_intakeMotor1;
-  TalonFX m_intakeMotor2;
-  TalonFX m_intakeMoter3;
-  TalonFX m_intakeMoter4;
+  TalonFX m_leftLinearScrew;
+  TalonFX m_rightLinearScrew;
+  TalonFX m_intakeRoller;
+  TalonFX m_storageRoller;
 
   PositionVoltage p_PositionRequest = new PositionVoltage(0).withSlot(0);
 
   DutyCycleOut speed;
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    m_intakeMotor1 = new TalonFX(IN_OUT_TAKE_MOTOR1_ID);
-    m_intakeMotor2 = new TalonFX(IN_OUT_TAKE_MOTOR2_ID);
-    m_intakeMoter3 = new TalonFX(TAKE_MOTOR1_ID);
-    m_intakeMoter4 = new TalonFX(TAKE_MOTOR2_ID);
+    m_leftLinearScrew = new TalonFX(20);
+    m_rightLinearScrew = new TalonFX(30);
+    m_intakeRoller = new TalonFX(10);
+    m_storageRoller = new TalonFX(40);
 
      var slot0Configs = new Slot0Configs();
     slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
     // Add kI, kD, kS, kV if needed for better control
-    m_intakeMotor1.getConfigurator().apply(slot0Configs);
-    m_intakeMotor2.getConfigurator().apply(slot0Configs);
+    m_leftLinearScrew.getConfigurator().apply(slot0Configs);
+    m_rightLinearScrew.getConfigurator().apply(slot0Configs);
 
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   }
@@ -44,35 +44,40 @@ public class IntakeSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
   }
   public void deoplyInTake(){
-    m_intakeMotor1.setControl(speed);
-    m_intakeMotor2.setControl(speed);
+    m_leftLinearScrew.setControl(speed);
+    m_rightLinearScrew.setControl(speed);
 
-    m_intakeMotor1.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
-    m_intakeMotor2.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
+    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
+    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
   public void runIntake() { 
-    m_intakeMoter3.setControl(speed);
-    m_intakeMoter4.setControl(speed);
+    m_intakeRoller.setControl(speed);
+    m_storageRoller.setControl(speed);
 
-    m_intakeMoter3.set(TAKE_SPEED);
-    m_intakeMoter4.set(TAKE_SPEED);
+    m_intakeRoller.set(TAKE_SPEED);
+    m_storageRoller.set(TAKE_SPEED);
   }
   public void undeoplyInTake(){
-    m_intakeMotor1.setControl(speed);
-    m_intakeMotor2.setControl(speed);
+    m_leftLinearScrew.setControl(speed);
+    m_rightLinearScrew.setControl(speed);
 
-    m_intakeMotor1.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
-    m_intakeMotor2.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+  }
+  public void runStorageRoller(){
+    m_storageRoller.setControl(speed);
+
+    m_storageRoller.set(TAKE_SPEED);
   }
 
   public void stopInOutTake() {
-    m_intakeMotor1.set(0);
-    m_intakeMotor2.set(0);
+    m_leftLinearScrew.set(0);
+    m_rightLinearScrew.set(0);
   }
 
   public void stopTake() {
-    m_intakeMoter3.set(0);
-    m_intakeMoter4.set(0);
+    m_intakeRoller.set(0);
+    m_storageRoller.set(0);
   }
 
   public Command deployIntakeCommand() {
@@ -82,7 +87,9 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command runIntakeCommand() {
     return run(this::runIntake);
   }
-
+public Command runStorgeRollersCommand(){
+  return run(this::runStorageRoller);
+}
   public Command undeployIntakeCommand() {
     return run(this::undeoplyInTake);
   }
