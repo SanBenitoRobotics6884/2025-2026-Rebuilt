@@ -9,7 +9,11 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.hal.SimDevice;
+import edu.wpi.first.hal.simulation.SimDeviceDataJNI.SimDeviceInfo;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -25,7 +29,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   DutyCycleOut speed;
 
- // DigitalInput i_limitSwitch = new DigitalInput(0); // DIO 0
+  private DigitalInput i_limitSwitch = new DigitalInput(15);
+  private final Timer simTimer = new Timer();
+
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     m_leftLinearScrew = new TalonFX(20);
@@ -41,8 +47,25 @@ public class IntakeSubsystem extends SubsystemBase {
 
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
 
-    
+    if (RobotBase.isSimulation()) {
+            simTimer.start();
+    }
+
+   // i_limitSwitch = new DigitalInput(0); // DIO 0
   }
+
+  public boolean isLimitPressed() {
+        if (RobotBase.isSimulation()){
+            return simTimer.hasElapsed(5.0);
+        }
+        return !i_limitSwitch.get(); 
+        // If using NC wiring, invert it
+    }
+
+    public void resetTimers() {
+        simTimer.start();
+        simTimer.reset();
+    }
 
   @Override
   public void periodic() {
