@@ -22,8 +22,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 
@@ -33,11 +35,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
-import static frc.robot.Constants.Constants.Intake.*;
-
 public class RobotContainer {
-    private DigitalInput i_limitswitchundeploy = new DigitalInput(LIMIT_SWITCH_UNDEPLOY_ID);
-
    
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed; // Reduce speed
@@ -55,6 +53,7 @@ public class RobotContainer {
     private final Joystick m_Joystick = new Joystick(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    
     private final SendableChooser<Command> autoChooser;
      public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
      public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
@@ -92,19 +91,17 @@ public class RobotContainer {
     NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopTakeCommand());
     NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.deployIntakeCommand());
     NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.undeployIntakeCommand());
-    NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopInOutTakeCommand());
+    NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
     }
 
     private void configureBindings() {
-      // i_limitSwitchdeploy.whileTrue(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
-       
 
         joystick.pov(90).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
+                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
         joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersCommand()))
@@ -118,9 +115,8 @@ public class RobotContainer {
         joystick.pov(270).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
         
-         if (i_limitswitchundeploy.get()) {
-            m_IntakeSubsystem.stopInOutTakeCommand();
-        } // silly thingy here :applause:
+        // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
+        //             .onTrue(new InstantCommand(() -> m_IntakeSubsystem.stopStorageCommand()));// silly thingy here :applause:
 
         if (m_Joystick.getRawButton(5)) {
             slowSpeed = 0.5;
@@ -129,6 +125,8 @@ public class RobotContainer {
         }
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
+       
+       
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->

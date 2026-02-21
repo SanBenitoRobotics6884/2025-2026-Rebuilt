@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -23,6 +24,8 @@ public class IntakeSubsystem extends SubsystemBase {
   PositionVoltage p_PositionRequest = new PositionVoltage(0).withSlot(0);
 
   DutyCycleOut speed;
+
+ // DigitalInput i_limitSwitch = new DigitalInput(0); // DIO 0
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     m_leftLinearScrew = new TalonFX(20);
@@ -37,6 +40,8 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
 
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
+
+    
   }
 
   @Override
@@ -70,7 +75,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(TAKE_SPEED);
   }
 
-  public void stopInOutTake() {
+  public void stopStorage() {
     m_leftLinearScrew.set(0);
     m_rightLinearScrew.set(0);
   }
@@ -79,6 +84,10 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeRoller.set(0);
     m_storageRoller.set(0);
   }
+
+ // public boolean isLimitPressed() {
+   // return !i_limitSwitch.get();
+ // }
 
   public Command deployIntakeCommand() {
     return run(this::deoplyInTake);
@@ -94,8 +103,8 @@ public Command runStorgeRollersCommand(){
     return run(this::undeoplyInTake);
   }
 
-  public Command stopInOutTakeCommand() {
-    return runOnce(this::stopInOutTake);
+  public Command stopStorageCommand() {
+    return runOnce(this::stopStorage);
   }
 
   public Command stopTakeCommand() {
