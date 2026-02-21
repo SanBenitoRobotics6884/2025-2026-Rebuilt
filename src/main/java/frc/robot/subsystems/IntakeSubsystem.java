@@ -25,7 +25,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   DutyCycleOut speed;
 
- // DigitalInput i_limitSwitch = new DigitalInput(0); // DIO 0
+//  DigitalInput i_limitSwitch = new DigitalInput(0); // DIO 0
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     m_leftLinearScrew = new TalonFX(20);
@@ -60,19 +60,17 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.setControl(speed);
 
     m_intakeRoller.set(TAKE_SPEED);
-    m_storageRoller.set(TAKE_SPEED);
+    m_storageRoller.set(STORAGEROLLER_SPEED);
   }
   public void undeoplyInTake(){
-    m_leftLinearScrew.setControl(speed);
-    m_rightLinearScrew.setControl(speed);
-
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
   }
   public void runStorageRoller(){
-    m_storageRoller.setControl(speed);
-
-    m_storageRoller.set(TAKE_SPEED);
+    m_storageRoller.set(STORAGEROLLER_SPEED);
+  }
+  public void runStorageRollerBack(){
+    m_storageRoller.set(STORAGEROLLER_SPEED);
   }
 
   public void stopStorage() {
@@ -85,9 +83,9 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(0);
   }
 
- // public boolean isLimitPressed() {
-   // return !i_limitSwitch.get();
- // }
+//  public boolean isLimitPressed() {
+//    return !i_limitSwitch.get();
+//  }
 
   public Command deployIntakeCommand() {
     return run(this::deoplyInTake);
@@ -98,6 +96,9 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 public Command runStorgeRollersCommand(){
   return run(this::runStorageRoller);
+}
+public Command runStorgeRollersBackCommand(){
+  return run(this::runStorageRollerBack);
 }
   public Command undeployIntakeCommand() {
     return run(this::undeoplyInTake);
