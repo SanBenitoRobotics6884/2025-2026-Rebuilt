@@ -16,13 +16,13 @@ public class Constants {
   public class Intake {
     public static final int LIMIT_SWITCH_STORAGE_DIO = 0;
 
-    public static final double PID_P_VALUE = 4.8;
+    public static final double PID_P_VALUE = 1;
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
 
-    public static final double IN_TAKE_SPEED = 0.25;
-    public static final double OUT_TAKE_SPEED = -0.25;
+  
     public static final double TAKE_SPEED = -0.25;
+     public static final double STORAGE_ROLLER_SPEED = 0.25;
 
     public static final double IN_TAKE_TARGET_ROTATIONS = 50.0;
     public static final double OUT_TAKE_TARGET_ROTATIONS = -50.0;

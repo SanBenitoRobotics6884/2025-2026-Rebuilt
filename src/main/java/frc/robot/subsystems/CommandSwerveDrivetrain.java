@@ -71,8 +71,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       return;
     }
 
-    HashMap<String, Command> eventMap = new HashMap<>();
-    
+     // HashMap<String, Command> eventMap = new HashMap<>();
+     // eventMap.put("RunIntake", s_IntakeSubsystem.runIntakeCommand());
 
      AutoBuilder.configure(
         this::getPose,

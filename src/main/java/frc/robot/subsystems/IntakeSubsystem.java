@@ -71,31 +71,21 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
   }
-  public void deoplyInTake(){
-    m_leftLinearScrew.setControl(speed);
-    m_rightLinearScrew.setControl(speed);
-
+  public void deployIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
   public void runIntake() { 
-    m_intakeRoller.setControl(speed);
-    m_storageRoller.setControl(speed);
 
     m_intakeRoller.set(TAKE_SPEED);
-    m_storageRoller.set(TAKE_SPEED);
+    m_storageRoller.set(STORAGE_ROLLER_SPEED);
   }
-  public void undeoplyInTake(){
-    m_leftLinearScrew.setControl(speed);
-    m_rightLinearScrew.setControl(speed);
-
+  public void undeployIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
   }
   public void runStorageRoller(){
-    m_storageRoller.setControl(speed);
-
-    m_storageRoller.set(TAKE_SPEED);
+    m_storageRoller.set(STORAGE_ROLLER_SPEED);
   }
 
   public void stopStorage() {
@@ -113,7 +103,7 @@ public class IntakeSubsystem extends SubsystemBase {
  // }
 
   public Command deployIntakeCommand() {
-    return run(this::deoplyInTake);
+    return run(this::deployIntake);
   }
 
   public Command runIntakeCommand() {
@@ -123,7 +113,7 @@ public Command runStorgeRollersCommand(){
   return run(this::runStorageRoller);
 }
   public Command undeployIntakeCommand() {
-    return run(this::undeoplyInTake);
+    return run(this::undeployIntake);
   }
 
   public Command stopStorageCommand() {
