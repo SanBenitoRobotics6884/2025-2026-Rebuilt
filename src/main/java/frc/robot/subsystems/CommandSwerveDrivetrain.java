@@ -49,7 +49,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
-    private final IntakeSubsystem s_IntakeSubsystem = new IntakeSubsystem();
+   
 
     
   // PathPlanner will hand us ROBOT-relative ChassisSpeeds. CTRE has a native request for that.
@@ -71,8 +71,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
       return;
     }
 
-    HashMap<String, Command> eventMap = new HashMap<>();
-    eventMap.put("RunIntake", s_IntakeSubsystem.runIntakeCommand());
+     // HashMap<String, Command> eventMap = new HashMap<>();
+     // eventMap.put("RunIntake", s_IntakeSubsystem.runIntakeCommand());
 
      AutoBuilder.configure(
         this::getPose,

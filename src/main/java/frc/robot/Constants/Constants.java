@@ -14,9 +14,10 @@ public class Constants {
   }
   
   public class Intake {
-    public static final int LIMIT_SWITCH_UNDEPLOY_DIO = 0;
+    public static final int LIMIT_SWITCH_STORAGE_DIO = 0;
 
     public static final double PID_P_VALUE = 1;
+  
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
 
@@ -32,6 +33,7 @@ public class Constants {
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
 
-    public static final double OUTTAKE_SPEED = 1.0;
+    public static final double OUTTAKE_SPEED = 1.5;
+    public static final double INDEX_SPEED = 0.5;
   }
 }

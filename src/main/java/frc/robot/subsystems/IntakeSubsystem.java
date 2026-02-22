@@ -9,7 +9,11 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.hal.SimDevice;
+import edu.wpi.first.hal.simulation.SimDeviceDataJNI.SimDeviceInfo;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -25,7 +29,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   DutyCycleOut speed;
 
-//  DigitalInput i_limitSwitch = new DigitalInput(0); // DIO 0
+  private DigitalInput i_limitSwitch = new DigitalInput(15);
+  private final Timer simTimer = new Timer();
+
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     m_leftLinearScrew = new TalonFX(20);
@@ -41,28 +47,40 @@ public class IntakeSubsystem extends SubsystemBase {
 
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
 
-    
+    if (RobotBase.isSimulation()) {
+            simTimer.start();
+    }
+
+   // i_limitSwitch = new DigitalInput(0); // DIO 0
   }
+
+  public boolean isLimitPressed() {
+        if (RobotBase.isSimulation()){
+            return simTimer.hasElapsed(5.0);
+        }
+        return !i_limitSwitch.get(); 
+        // If using NC wiring, invert it
+    }
+
+    public void resetTimers() {
+        simTimer.start();
+        simTimer.reset();
+    }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
   }
-  public void deoplyInTake(){
-    m_leftLinearScrew.setControl(speed);
-    m_rightLinearScrew.setControl(speed);
-
+  public void deployIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
   public void runIntake() { 
-    m_intakeRoller.setControl(speed);
-    m_storageRoller.setControl(speed);
 
     m_intakeRoller.set(TAKE_SPEED);
     m_storageRoller.set(STORAGEROLLER_SPEED);
   }
-  public void undeoplyInTake(){
+  public void undeployIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
   }
@@ -70,9 +88,8 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(STORAGEROLLER_SPEED);
   }
   public void runStorageRollerBack(){
-    m_storageRoller.set(STORAGEROLLER_SPEED);
+    m_storageRoller.set(-STORAGEROLLER_SPEED);
   }
-
   public void stopStorage() {
     m_leftLinearScrew.set(0);
     m_rightLinearScrew.set(0);
@@ -88,7 +105,7 @@ public class IntakeSubsystem extends SubsystemBase {
 //  }
 
   public Command deployIntakeCommand() {
-    return run(this::deoplyInTake);
+    return run(this::deployIntake);
   }
 
   public Command runIntakeCommand() {
@@ -101,7 +118,7 @@ public Command runStorgeRollersBackCommand(){
   return run(this::runStorageRollerBack);
 }
   public Command undeployIntakeCommand() {
-    return run(this::undeoplyInTake);
+    return run(this::undeployIntake);
   }
 
   public Command stopStorageCommand() {
