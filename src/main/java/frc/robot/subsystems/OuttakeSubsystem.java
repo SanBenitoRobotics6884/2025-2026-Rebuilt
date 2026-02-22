@@ -19,8 +19,8 @@ public class OuttakeSubsystem extends SubsystemBase {
   DutyCycleOut speed;
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
-    m_outtakeMotor1 = new TalonFX(OUT_MOTOR1_ID);
-    m_outtakeMotor2 = new TalonFX(OUT_MOTOR2_ID);
+    m_outtakeMotor1 = new TalonFX(60);
+    m_outtakeMotor2 = new TalonFX(50);
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   }
 

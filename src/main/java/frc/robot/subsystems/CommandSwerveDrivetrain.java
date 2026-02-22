@@ -2,18 +2,25 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -21,11 +28,15 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
+import frc.robot.generated.TunerConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
+import static frc.robot.subsystems.IntakeSubsystem.*;
+import static frc.robot.subsystems.OuttakeSubsystem.*;
+import static frc.robot.subsystems.ClimbSubsystem.*;
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
@@ -38,6 +49,67 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
+   
+
+    
+  // PathPlanner will hand us ROBOT-relative ChassisSpeeds. CTRE has a native request for that.
+  private final SwerveRequest.ApplyRobotSpeeds ppRobotSpeeds =
+      new SwerveRequest.ApplyRobotSpeeds()
+          .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
+          .withSteerRequestType(SwerveModule.SteerRequestType.Position);
+
+  public void DriveSubsystem() {
+    configurePathPlanner();
+  }
+
+   private void configurePathPlanner() {
+    RobotConfig config;
+    try {
+      config = RobotConfig.fromGUISettings();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return;
+    }
+
+     // HashMap<String, Command> eventMap = new HashMap<>();
+     // eventMap.put("RunIntake", s_IntakeSubsystem.runIntakeCommand());
+
+     AutoBuilder.configure(
+        this::getPose,
+        this::resetPose,
+        this::getRobotRelativeSpeeds,
+        (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
+        new PPHolonomicDriveController(
+            new PIDConstants(5.0, 0.0, 0.0), // translation
+            new PIDConstants(5.0, 0.0, 0.0)  // rotation
+        ),
+        config,
+        () -> DriverStation.getAlliance().isPresent()
+              && DriverStation.getAlliance().get() == DriverStation.Alliance.Red,
+        this
+    );
+  }
+
+  // --- PathPlanner-required methods ---
+  public Pose2d getPose() {
+    return this.getState().Pose;
+  }
+
+  public void resetPose(Pose2d pose) {
+    this.resetPose(pose);
+  }
+
+  /** MUST be robot-relative speeds (NOT field-relative) */
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    return this.getState().Speeds;
+  }
+
+  /** Drive using robot-relative chassis speeds */
+  public void driveRobotRelative(ChassisSpeeds speeds) {
+    this.setControl(ppRobotSpeeds.withSpeeds(speeds));
+  }
+
+  
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
