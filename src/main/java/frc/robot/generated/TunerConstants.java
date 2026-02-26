@@ -151,7 +151,7 @@ public class TunerConstants {
     private static final int kBackLeftDriveMotorId = 5;
     private static final int kBackLeftSteerMotorId = 6;
     private static final int kBackLeftEncoderId = 0;
-    private static final Angle kBackLeftEncoderOffset = Rotations.of(0.003173828125);
+    private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.01318359375);
     private static final boolean kBackLeftSteerMotorInverted = true;
     private static final boolean kBackLeftEncoderInverted = false;
 
@@ -262,10 +262,10 @@ public class TunerConstants {
          *                                  unspecified or set to 0 Hz, this is 250 Hz on
          *                                  CAN FD, and 100 Hz on CAN 2.0.
          * @param odometryStandardDeviation The standard deviation for odometry calculation
-         *                                  in the form [x, y, theta]áµ€, with units in meters
+         *                                  in the form [x, y, theta]ᵀ, with units in meters
          *                                  and radians
          * @param visionStandardDeviation   The standard deviation for vision calculation
-         *                                  in the form [x, y, theta]áµ€, with units in meters
+         *                                  in the form [x, y, theta]ᵀ, with units in meters
          *                                  and radians
          * @param modules                   Constants for each specific module
          */
