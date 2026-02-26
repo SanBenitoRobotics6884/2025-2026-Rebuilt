@@ -126,6 +126,7 @@ public class RobotContainer {
 
         if (m_Joystick.getRawButton(5)) {
             slowSpeed = 0.5;
+            joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakeSlowCommand()));
         } else {
             slowSpeed = 1;
         }
@@ -143,7 +144,7 @@ public class RobotContainer {
         );
 
         // Idle while the robot is disabled. This ensures the configured
-        // neutral mode is applied to the drive motors while disabled.
+        // neutral mode is applied to the drive motors while disabled. //evil comment of doom and despair
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
