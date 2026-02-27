@@ -31,9 +31,11 @@ public class OuttakeSubsystem extends SubsystemBase {
 
   public void runOuttake() {
     m_outtakeMotor1.setControl(speed);
-    m_outtakeMotor2.setControl(speed);
     m_outtakeMotor1.set(-OUTTAKE_SPEED);
-    m_outtakeMotor2.set(OUTTAKE_SPEED);
+   
+  }
+  public void runindex(){
+     m_outtakeMotor2.set(OUTTAKE_SPEED);
   }
 
   public void runOuttakeSlow() {
@@ -45,18 +47,25 @@ public class OuttakeSubsystem extends SubsystemBase {
 
   public void stopOuttake() {
     m_outtakeMotor1.set(0);
-    m_outtakeMotor2.set(0);
+  }
+  public void stopindex(){
+     m_outtakeMotor2.set(0);
   }
 
   public Command runOuttakecommand() {
     return run(this::runOuttake);
   }
-
+  public Command runIndexCommand(){
+    return run(this::runindex);
+  }
   public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
   }
 
   public Command stopOuttakeCommand() {
     return runOnce(this::stopOuttake);
+  }
+  public Command stopIndexCommand() {
+    return runOnce(this::stopindex);
   }
 }

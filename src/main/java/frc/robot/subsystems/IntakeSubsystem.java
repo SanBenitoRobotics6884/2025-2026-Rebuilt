@@ -77,9 +77,11 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
   public void runIntake() { 
-
-    m_intakeRoller.set(TAKE_SPEED);
-    m_storageRoller.set(STORAGEROLLER_SPEED);
+   m_intakeRoller.set(TAKE_SPEED);
+   m_storageRoller.set(STORAGEROLLER_SPEED);
+  }
+  public void runIntakeRollerBack(){
+    m_intakeRoller.set(-TAKE_SPEED);
   }
   public void undeployIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
@@ -111,6 +113,9 @@ public class IntakeSubsystem extends SubsystemBase {
 
   public Command runIntakeCommand() {
     return run(this::runIntake);
+  }
+  public Command runIntakeRollerBackCommand(){
+    return run(this::runIntakeRollerBack);
   }
 public Command runStorgeRollersCommand(){
   return run(this::runStorageRoller);

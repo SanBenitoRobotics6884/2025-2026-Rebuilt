@@ -100,6 +100,7 @@ public class RobotContainer {
 
     private void configureBindings() {
         
+        //Intake controlls
         joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
@@ -110,10 +111,16 @@ public class RobotContainer {
                     .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
         joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackCommand()))
                     .whileFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
-
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeRollerBackCommand()))
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        
+        //OutTake controlls
         joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
+        joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
+                               .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
 
+        //Climb controlls
         joystick.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
         joystick.pov(D_PAD_UP).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
@@ -125,8 +132,7 @@ public class RobotContainer {
         new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed)
             .onTrue(m_IntakeSubsystem.stopStorageCommand());
 
-        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakeSlowCommand()));
-
+       
         joystick.leftBumper().whileTrue(
             drivetrain.applyRequest(() -> 
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed)
