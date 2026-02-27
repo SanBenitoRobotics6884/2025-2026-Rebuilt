@@ -36,10 +36,12 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
+import static frc.robot.Constants.Constants.Container.*;
+
 public class RobotContainer {
    
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double slowSpeed; // Reduce speed
+    private double slowSpeed = SLOW_SWERVE_SPEED; // Reduce swerve speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -50,8 +52,7 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
-    private final Joystick m_Joystick = new Joystick(0);
+    private final CommandXboxController joystick = new CommandXboxController(CONTROLER_PORT);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
@@ -99,9 +100,9 @@ public class RobotContainer {
 
     private void configureBindings() {
         
-        joystick.pov(90).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
@@ -113,9 +114,9 @@ public class RobotContainer {
         joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
 
-        joystick.pov(0).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
+        joystick.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
-        joystick.pov(270).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
+        joystick.pov(D_PAD_UP).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
                     .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
         
         // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
@@ -124,12 +125,15 @@ public class RobotContainer {
         new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed)
             .onTrue(m_IntakeSubsystem.stopStorageCommand());
 
-        if (m_Joystick.getRawButton(5)) {
-            slowSpeed = 0.5;
-            joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakeSlowCommand()));
-        } else {
-            slowSpeed = 1;
-        }
+        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakeSlowCommand()));
+
+        joystick.leftBumper().whileTrue(
+            drivetrain.applyRequest(() -> 
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed)
+            )
+        );
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
        
@@ -137,9 +141,9 @@ public class RobotContainer {
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 

@@ -39,4 +39,16 @@ public class Constants {
     public static final double OUTTAKE_SPEED_SLOW = OUTTAKE_SPEED * 0.5;
     public static final double INDEX_SPEED_SLOW = INDEX_SPEED * 0.5;
   }
+
+  public class Container {
+    public static final double SLOW_SWERVE_SPEED = 0.5;
+
+    public static final int CONTROLER_PORT = 0;
+
+    // From POV angles, it is translated to D-Pad buttons:
+    public static final int D_PAD_LEFT = 0;
+    public static final int D_PAD_DOWN = 90;
+    public static final int D_PAD_RIGHT = 180;
+    public static final int D_PAD_UP = 270;
+  }
 }
