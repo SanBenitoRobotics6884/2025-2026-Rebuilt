@@ -44,6 +44,9 @@ public class OuttakeSubsystem extends SubsystemBase {
     m_outtakeMotor1.set(-OUTTAKE_SPEED_SLOW);
     m_outtakeMotor2.set(OUTTAKE_SPEED_SLOW);
   }
+  public void runIndexback() {
+    m_outtakeMotor2.set(-INDEX_SPEED);
+  }
 
   public void stopOuttake() {
     m_outtakeMotor1.set(0);
@@ -60,6 +63,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   }
   public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
+  }
+  public Command runIndexBackCommand() {
+    return run(this::runIndexback);
   }
 
   public Command stopOuttakeCommand() {
