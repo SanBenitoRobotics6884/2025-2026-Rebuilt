@@ -21,7 +21,7 @@ public class OuttakeSubsystem extends SubsystemBase {
   public OuttakeSubsystem() {
     m_outtakeMotor1 = new TalonFX(60);
     m_outtakeMotor2 = new TalonFX(50);
-    speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
+    speed = new DutyCycleOut(DUTYCYCLE_OUTPUT); //origianly no subtraction to speed
   }
 
   @Override
@@ -51,6 +51,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void stopindex(){
      m_outtakeMotor2.set(0);
   }
+  public void reverseIndex() {
+    m_outtakeMotor2.set(-INDEX_SPEED);
+  }
 
   public Command runOuttakecommand() {
     return run(this::runOuttake);
@@ -60,6 +63,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   }
   public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
+  }
+  public Command runReverseIndexCommand() {
+    return run(this::reverseIndex);
   }
 
   public Command stopOuttakeCommand() {

@@ -119,6 +119,8 @@ public class RobotContainer {
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
         joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexCommand()))
+                    .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
 
         //Climb controlls
         joystick.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))

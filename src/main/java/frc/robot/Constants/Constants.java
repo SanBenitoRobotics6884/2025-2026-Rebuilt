@@ -33,7 +33,7 @@ public class Constants {
 
     public static final double DUTYCYCLE_OUTPUT = 0.5;
 
-    public static final double OUTTAKE_SPEED = 1.5;
+    public static final double OUTTAKE_SPEED = 0.98;
     public static final double INDEX_SPEED = 1.0;
 
     public static final double OUTTAKE_SPEED_SLOW = OUTTAKE_SPEED * 0.5;
