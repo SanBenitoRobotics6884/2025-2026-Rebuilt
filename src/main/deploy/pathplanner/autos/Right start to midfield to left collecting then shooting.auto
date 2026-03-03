@@ -1,0 +1,91 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right start to right midfield"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "deployIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopInOutTakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right of midfield to left"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopTakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "undeployIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopInOutTakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left of midfield to middle left start"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left start to middle facing hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runOuttakecommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

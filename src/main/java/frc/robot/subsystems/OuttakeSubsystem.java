@@ -19,8 +19,8 @@ public class OuttakeSubsystem extends SubsystemBase {
   DutyCycleOut speed;
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
-    m_outtakeMotor1 = new TalonFX(OUT_MOTOR1_ID);
-    m_outtakeMotor2 = new TalonFX(OUT_MOTOR2_ID);
+    m_outtakeMotor1 = new TalonFX(60);
+    m_outtakeMotor2 = new TalonFX(50);
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
   }
 
@@ -36,6 +36,11 @@ public class OuttakeSubsystem extends SubsystemBase {
     m_outtakeMotor2.set(OUTTAKE_SPEED);
   }
 
+  public void runIndexBack() {
+    m_outtakeMotor2.setControl(speed);
+    m_outtakeMotor2.set(-OUTTAKE_SPEED);
+  }
+
   public void stopOuttake() {
     m_outtakeMotor1.set(0);
     m_outtakeMotor2.set(0);
@@ -47,5 +52,9 @@ public class OuttakeSubsystem extends SubsystemBase {
 
   public Command stopOuttakeCommand() {
     return runOnce(this::stopOuttake);
+  }
+
+  public Command runIndexBackCommand() {
+    return run(this::runIndexBack);
   }
 }
