@@ -36,7 +36,7 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 import static frc.robot.subsystems.IntakeSubsystem.*;
 import static frc.robot.subsystems.OuttakeSubsystem.*;
-import static frc.robot.subsystems.ClimbSubsystem.*;
+
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.

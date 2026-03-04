@@ -13,6 +13,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.config.RobotConfig;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -31,7 +32,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
@@ -57,11 +57,13 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
     private final SendableChooser<Command> autoChooser;
-     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
-     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
-     public ClimbSubsystem m_ClimbSubsystem = new ClimbSubsystem();
-
-
+    public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
+    public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
+    
+    final VelocityVoltage m_request = new VelocityVoltage(0);
+    double targetRPM = 3000;
+    double targetRPS = targetRPM / 60.0;
+    
 
     public RobotContainer() {
         drivetrain.DriveSubsystem();
@@ -101,9 +103,9 @@ public class RobotContainer {
     private void configureBindings() {
         
         //Intake controlls
-        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
@@ -122,12 +124,6 @@ public class RobotContainer {
         joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexCommand()))
                     .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
 
-        //Climb controlls
-        joystick.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
-        joystick.pov(D_PAD_UP).whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
-        
         // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
         //             .onTrue(new InstantCommand(() -> m_IntakeSubsystem.stopStorageCommand()));// silly thingy here :applause:
         
