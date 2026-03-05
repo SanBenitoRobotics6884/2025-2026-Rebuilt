@@ -103,9 +103,9 @@ public class RobotContainer {
     private void configureBindings() {
         
         //Intake controlls
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
