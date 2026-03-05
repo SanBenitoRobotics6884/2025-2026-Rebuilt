@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -21,6 +22,14 @@ public class OuttakeSubsystem extends SubsystemBase {
   public OuttakeSubsystem() {
     m_outtakeMotor1 = new TalonFX(60);
     m_outtakeMotor2 = new TalonFX(50);
+
+     final VelocityVoltage m_request = new VelocityVoltage(0);
+    double targetRPM = 3000;
+    double targetRPS = targetRPM / 60.0;
+
+    m_outtakeMotor1.setControl(m_request.withVelocity(targetRPS));
+    m_outtakeMotor2.setControl(m_request.withVelocity(targetRPS));
+    
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT); //origianly no subtraction to speed
   }
 

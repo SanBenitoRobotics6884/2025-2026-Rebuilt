@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.hal.SimDevice;
@@ -44,6 +45,12 @@ public class IntakeSubsystem extends SubsystemBase {
     // Add kI, kD, kS, kV if needed for better control
     m_leftLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
+
+    final VelocityVoltage m_request = new VelocityVoltage(0);
+    double targetRPM = 3000;
+    double targetRPS = targetRPM / 60.0;
+
+    m_storageRoller.setControl(m_request.withVelocity(targetRPS));
 
     speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
 

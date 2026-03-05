@@ -60,9 +60,7 @@ public class RobotContainer {
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     
-    final VelocityVoltage m_request = new VelocityVoltage(0);
-    double targetRPM = 3000;
-    double targetRPS = targetRPM / 60.0;
+   
     
 
     public RobotContainer() {
