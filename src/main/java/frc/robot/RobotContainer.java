@@ -118,8 +118,8 @@ public class RobotContainer {
         joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
         joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
-                               .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
-        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexCommand()))
+                    .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexBackCommand()))
                     .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
 
         // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
@@ -131,9 +131,9 @@ public class RobotContainer {
        
         joystick.leftBumper().whileTrue(
             drivetrain.applyRequest(() -> 
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed)
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Conley should play pressure with Jerry.
                     .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed) // JERRY IS A FAT GAY CHUD!
             )
         );
         // Note that X is defined as forward according to WPILib convention,

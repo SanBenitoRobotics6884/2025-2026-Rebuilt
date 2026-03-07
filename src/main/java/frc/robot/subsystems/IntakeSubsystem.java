@@ -38,9 +38,9 @@ public class IntakeSubsystem extends SubsystemBase {
     m_leftLinearScrew = new TalonFX(20);
     m_rightLinearScrew = new TalonFX(30);
     m_intakeRoller = new TalonFX(10);
-    m_storageRoller = new TalonFX(40);
+    m_storageRoller = new TalonFX(40); // EVIL COMMENT BOOOOOO
 
-     var slot0Configs = new Slot0Configs();
+    var slot0Configs = new Slot0Configs();
     slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
     // Add kI, kD, kS, kV if needed for better control
     m_leftLinearScrew.getConfigurator().apply(slot0Configs);
@@ -52,7 +52,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
     m_storageRoller.setControl(m_request.withVelocity(targetRPS));
 
-    speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
+    // speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
 
     if (RobotBase.isSimulation()) {
             simTimer.start();
@@ -73,6 +73,7 @@ public class IntakeSubsystem extends SubsystemBase {
         simTimer.start();
         simTimer.reset();
     }
+    
 
   @Override
   public void periodic() {
