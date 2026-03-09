@@ -30,7 +30,7 @@ public class Constants {
     public static final double OUTTAKE_SPEED_SLOW = 0.5;
     public static final double INDEX_SPEED_SLOW = 0.5;
 
-    public static final double PID_P_VALUE = 1.25;
+    public static final double PID_P_VALUE = 0.7;
     // public static final double PID_I_VALUE = 0.25;
     // public static final double PID_D_VALUE = 0.25;
   }
