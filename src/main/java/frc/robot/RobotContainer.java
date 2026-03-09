@@ -6,28 +6,43 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.io.ObjectInputStream.GetField;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.RobotConfig;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
-public class RobotContainer {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double slowSpeed; // Reduce speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+import static frc.robot.Constants.Constants.Container.*;
 
+public class RobotContainer {
+   
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double slowSpeed = SLOW_SWERVE_SPEED; // Reduce swerve speed
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -37,53 +52,105 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
-    private final Joystick m_Joystick = new Joystick(0);
+    private final CommandXboxController joystick = new CommandXboxController(CONTROLER_PORT);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
+    
+    private final SendableChooser<Command> autoChooser;
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
-    public ClimbSubsystem m_ClimbSubsystem = new ClimbSubsystem();
+    
+   
+    
 
     public RobotContainer() {
+        drivetrain.DriveSubsystem();
+        if (AutoBuilder.isConfigured()) {
+            System.out.print("it is configured");
+        }
+        //config
+
+     // For convenience a programmer could change this when going to competition.
+     autoChooser = AutoBuilder.buildAutoChooser();
+
+    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
+    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
+    SmartDashboard.putData("Middle start shoot then climb", autoChooser);
+    SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
+    SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
+    SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
+    SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
+    SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
+
+
+
         configureBindings();
+    
+    NamedCommands.registerCommand("RunIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
+    NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopTakeCommand());
+    NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.deployIntakeCommand());
+    NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.undeployIntakeCommand());
+    NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
+    NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
+    NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
     }
 
     private void configureBindings() {
-        joystick.pov(0).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
-        joystick.pov(180).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopInOutTakeCommand()));
-        joystick.pov(270).whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
+        
+        //Intake controlls
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+        joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
-
+        joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersCommand()))
+                    .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackCommand()))
+                    .whileFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeRollerBackCommand()))
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+        
+        //OutTake controlls
         joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
+        joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
+                    .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexBackCommand()))
+                    .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
 
-        joystick.a().whileTrue(Commands.sequence(m_ClimbSubsystem.climbUpCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_ClimbSubsystem.climbDownCommand()))
-                    .onFalse(Commands.sequence(m_ClimbSubsystem.stopClimbCommand()));
+        // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
+        //             .onTrue(new InstantCommand(() -> m_IntakeSubsystem.stopStorageCommand()));// silly thingy here :applause:
+        
+        new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed)
+            .onTrue(m_IntakeSubsystem.stopStorageCommand());
 
-        if (m_Joystick.getRawButton(5)) {
-            slowSpeed = 0.5;
-        } else {
-            slowSpeed = 1;
-        }
+       
+        joystick.leftBumper().whileTrue(
+            drivetrain.applyRequest(() -> 
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Conley should play pressure with Jerry.
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed) // JERRY IS A FAT GAY CHUD!
+            )
+        );
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
+       
+       
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
             drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed) // Drive counterclockwise with negative X (left)
+                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
         // Idle while the robot is disabled. This ensures the configured
-        // neutral mode is applied to the drive motors while disabled.
+        // neutral mode is applied to the drive motors while disabled. //evil comment of doom and despair
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
@@ -102,26 +169,11 @@ public class RobotContainer {
         joystick.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
-
         
     }
 
     public Command getAutonomousCommand() {
         // Simple drive forward auton
-        final var idle = new SwerveRequest.Idle();
-        return Commands.sequence(
-            // Reset our field centric heading to match the robot
-            // facing away from our alliance station wall (0 deg).
-            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-            // Then slowly drive forward (away from us) for 5 seconds.
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(0.5)
-                    .withVelocityY(0)
-                    .withRotationalRate(0)
-            )
-            .withTimeout(5.0),
-            // Finally idle for the rest of auton
-            drivetrain.applyRequest(() -> idle)
-        );
+       return autoChooser.getSelected();
     }
 }
