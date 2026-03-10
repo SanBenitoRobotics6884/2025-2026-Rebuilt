@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 9.130296208525431,
-        "y": 0.8110663507108986
+        "x": 8.511223404255318,
+        "y": 0.8267287234042566
       },
       "isLocked": false,
       "linkedName": "Right of midfield"
@@ -20,8 +20,8 @@
         "y": 0.6337500000000011
       },
       "prevControl": {
-        "x": 2.5517676767676765,
-        "y": 0.633750000000001
+        "x": 4.225487588652482,
+        "y": 0.6578723404255322
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,7 +31,7 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.5,
-      "rotationDegrees": -179.71352348972226
+      "rotationDegrees": 2.320172346844307
     }
   ],
   "constraintZones": [],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 178.9087837747374
+    "rotation": -0.7701209198281259
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -90.76389846054786
+    "rotation": 91.5031706294493
   },
   "useDefaultConstraints": true
 }

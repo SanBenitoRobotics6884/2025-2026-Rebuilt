@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.141042654028437,
-        "y": 1.2839099526066342
+        "x": 8.125265957446807,
+        "y": 1.3011347517730507
       },
       "isLocked": false,
       "linkedName": "start right midfield"
@@ -20,8 +20,8 @@
         "y": 7.323412322274882
       },
       "prevControl": {
-        "x": 8.130296208530806,
-        "y": 7.742523696682465
+        "x": 8.093102836879432,
+        "y": 7.749840425531916
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 89.2042764470617
+    "rotation": -89.09458349033824
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 89.99999999948824
+    "rotation": -91.75507461935372
   },
   "useDefaultConstraints": true
 }

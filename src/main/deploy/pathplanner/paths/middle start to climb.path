@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.6818483412268534,
-        "y": 3.777085308056871
+        "x": 3.563219696969697,
+        "y": 4.046452020202021
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.1546919431279616,
-        "y": 3.787831753554501
+        "x": 3.8124589873489887,
+        "y": 4.065939865932817
       },
       "isLocked": false,
-      "linkedName": "Middle facing hub"
+      "linkedName": "middle start"
     },
     {
       "anchor": {
-        "x": 1.513308080808081,
+        "x": 2.6818483412268534,
         "y": 3.777085308056871
       },
       "prevControl": {
-        "x": 1.1811994949494957,
-        "y": 3.7830555555555554
+        "x": 2.392189716313461,
+        "y": 3.6892464538963
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Base of climb"
+      "linkedName": "Middle facing hub"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": -52.48845922674134
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -47,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 0.7904526097053329
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 179.5592719272373
+    "rotation": -0.5320735480393364
   },
   "useDefaultConstraints": true
 }

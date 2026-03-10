@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.130296208530806,
-        "y": 6.8505687203791465
+        "x": 8.117225177304965,
+        "y": 6.881436170212766
       },
       "isLocked": false,
       "linkedName": "Left of MIddle field"
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -90.76389846054786
+    "rotation": 91.5031706294493
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -88.91907581279871
+    "rotation": 90.5597514819265
   },
   "useDefaultConstraints": true
 }
