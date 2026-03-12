@@ -32,7 +32,6 @@ public class VisionSusbsytem extends SubsystemBase {
   Transform3d robotTocam = new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0,0,0));
  PhotonPoseEstimator m_poseEstimator = new PhotonPoseEstimator(layout, robotTocam);
 
-
   boolean AprilTagSight = false;
 
   double targetYaw;
@@ -40,10 +39,10 @@ public class VisionSusbsytem extends SubsystemBase {
   double targetSkew;
   double targetArea;
   double targetDistance;
+  
 
   private CommandSwerveDrivetrain m_drivetrain;
 
-  /** Creates a new VisionSusbsytem. */
   public VisionSusbsytem(CommandSwerveDrivetrain drivetrain) {
     m_drivetrain = drivetrain;
   }
@@ -77,6 +76,7 @@ public class VisionSusbsytem extends SubsystemBase {
                 pose.get().timestampSeconds
     );
   }
+
   if(result.hasTargets()){
       var bestTarget = result.getBestTarget();
       
@@ -106,6 +106,7 @@ public class VisionSusbsytem extends SubsystemBase {
     SmartDashboard.putNumber("Skew", targetSkew);
     SmartDashboard.putNumber("Area:", targetArea);
   }
+
   public double getTargetDistance() {
     return targetDistance;
   }
