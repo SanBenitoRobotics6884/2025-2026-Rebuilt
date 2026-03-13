@@ -17,7 +17,7 @@ public class Constants {
     public static final double STORAGEROLLER_SPEED = 0.25;
 
     public static final double IN_TAKE_TARGET_ROTATIONS = -55.0;
-    public static final double OUT_TAKE_TARGET_ROTATIONS = 0.0;
+    public static final double OUT_TAKE_TARGET_ROTATIONS = 5.0;
   }
 
   public class Outtake {
