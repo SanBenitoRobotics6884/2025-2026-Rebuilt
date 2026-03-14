@@ -1,7 +1,5 @@
 package frc.robot.Constants;
 
-import com.pathplanner.lib.config.RobotConfig;
-
 public class Constants {
   
   public class Intake {
