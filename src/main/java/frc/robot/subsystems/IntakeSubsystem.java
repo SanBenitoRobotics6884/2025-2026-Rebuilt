@@ -104,7 +104,6 @@ public class IntakeSubsystem extends SubsystemBase {
     m_leftLinearScrew.set(0);
     m_rightLinearScrew.set(0);
   }
-
   public void stopTake() {
     m_intakeRoller.set(0);
     m_storageRoller.set(0);
@@ -117,6 +116,9 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command deployIntakeCommand() {
     return run(this::deployIntake);
   }
+  public Command undeployIntakeCommand() {
+  return run(this::undeployIntake);
+  }
 
   public Command runIntakeCommand() {
     return run(this::runIntake);
@@ -124,20 +126,17 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command runIntakeRollerBackCommand(){
     return run(this::runIntakeRollerBack);
   }
-public Command runStorgeRollersCommand(){
+
+  public Command runStorgeRollersCommand(){
   return run(this::runStorageRoller);
-}
-public Command runStorgeRollersBackCommand(){
+  }
+  public Command runStorgeRollersBackCommand(){
   return run(this::runStorageRollerBack);
-}
-  public Command undeployIntakeCommand() {
-    return run(this::undeployIntake);
   }
 
   public Command stopStorageCommand() {
     return runOnce(this::stopStorage);
   }
-
   public Command stopTakeCommand() {
     return runOnce(this::stopTake);
   }

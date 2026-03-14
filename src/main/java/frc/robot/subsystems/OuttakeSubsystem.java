@@ -35,9 +35,6 @@ public class OuttakeSubsystem extends SubsystemBase {
     // Add kI, kD, kS, kV if needed for better control
     m_outtakeMotor1.getConfigurator().apply(slot0Configs);
     m_outtakeMotor2.getConfigurator().apply(slot0Configs);
- 
-    // speed = new DutyCycleOut(DUTYCYCLE_OUTPUT); //origianly no subtraction to speed
-
   }
 
   @Override
@@ -46,7 +43,6 @@ public class OuttakeSubsystem extends SubsystemBase {
   }
 
   public void runOuttake() {
-    //m_outtakeMotor1.setControl(speed);
     m_outtakeMotor1.setControl(m_request.withVelocity(-targetRPS));
    
   }
@@ -69,14 +65,17 @@ public class OuttakeSubsystem extends SubsystemBase {
      m_outtakeMotor2.set(0);
   }
 
+  // Outtake Commands
+
   public Command runOuttakecommand() {
     return run(this::runOuttake);
   }
-  public Command runIndexCommand(){
-    return run(this::runindex);
-  }
   public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
+  }
+
+  public Command runIndexCommand(){
+    return run(this::runindex);
   }
   public Command runIndexBackCommand() {
     return run(this::runIndexback);
