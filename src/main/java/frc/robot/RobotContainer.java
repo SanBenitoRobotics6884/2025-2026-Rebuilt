@@ -6,13 +6,10 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -23,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -42,7 +38,6 @@ public class RobotContainer {
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
    
-
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(CONTROLER_PORT);
@@ -53,16 +48,7 @@ public class RobotContainer {
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     
-   
-    
-
     public RobotContainer() {
-        drivetrain.DriveSubsystem();
-        if (AutoBuilder.isConfigured()) {
-            System.out.print("it is configured");
-        }
-        //config
-
      // For convenience a programmer could change this when going to competition.
      autoChooser = AutoBuilder.buildAutoChooser();
 
@@ -78,14 +64,12 @@ public class RobotContainer {
     SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
     SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
 
-
-
         configureBindings();
-    
+
     NamedCommands.registerCommand("RunIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
-    NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopTakeCommand());
-    NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.deployIntakeCommand());
-    NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.undeployIntakeCommand());
+    NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
+    NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
+    NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
     NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
@@ -93,35 +77,33 @@ public class RobotContainer {
 
     private void configureBindings() {
         
-        //Intake controlls
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.deployIntakeCommand()))
+    //Intake controlls
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.undeployIntakeCommand()))
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
         joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersCommand()))
-                    .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+                    .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
         joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackCommand()))
-                    .whileFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
-        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeRollerBackCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopTakeCommand()));
+                    .whileFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackCommand()))
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
         
-        //OutTake controlls
+    //OutTake controlls
         joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
         joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
                     .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
-        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexBackCommand()))
+        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexCommand()))
                     .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
-
-        // new Trigger(() -> m_IntakeSubsystem.isLimitPressed())
-        //             .onTrue(new InstantCommand(() -> m_IntakeSubsystem.stopStorageCommand()));// silly thingy here :applause:
         
+    //Limit Switch
         new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed)
             .onTrue(m_IntakeSubsystem.stopStorageCommand());
 
-       
+    //Slow Mode
         joystick.leftBumper().whileTrue(
             drivetrain.applyRequest(() -> 
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Conley should play pressure with Jerry.
@@ -131,7 +113,6 @@ public class RobotContainer {
         );
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-       
        
         drivetrain.setDefaultCommand(
             // Drivetrain will execute this command periodically
@@ -149,8 +130,6 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-      
-
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
@@ -161,8 +140,7 @@ public class RobotContainer {
         // Reset the field-centric heading on left bumper press.
         joystick.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-        drivetrain.registerTelemetry(logger::telemeterize);
-        
+        drivetrain.registerTelemetry(logger::telemeterize); 
     }
 
     public Command getAutonomousCommand() {

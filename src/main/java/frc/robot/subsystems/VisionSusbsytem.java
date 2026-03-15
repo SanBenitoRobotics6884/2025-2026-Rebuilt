@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-
 import java.util.List;
 
 import org.photonvision.PhotonCamera;
@@ -18,10 +17,8 @@ public class VisionSusbsytem extends SubsystemBase {
   List<PhotonPipelineResult> unreadResults = m_randomAssCamera.getAllUnreadResults();
   PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
   
-
   /** Creates a new VisionSusbsytem. */
   public VisionSusbsytem() {
-
   }
 
   @Override

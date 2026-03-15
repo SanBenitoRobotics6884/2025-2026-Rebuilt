@@ -5,11 +5,9 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -27,8 +25,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   PositionVoltage p_PositionRequest = new PositionVoltage(0).withSlot(0);
 
-  DutyCycleOut speed;
-
   private DigitalInput i_limitSwitch = new DigitalInput(15);
   private final Timer simTimer = new Timer();
 
@@ -39,6 +35,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeRoller = new TalonFX(10);
     m_storageRoller = new TalonFX(40); // EVIL COMMENT BOOOOOO
 
+  //RPM
     var slot0Configs = new Slot0Configs();
     slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
     // Add kI, kD, kS, kV if needed for better control
@@ -51,15 +48,12 @@ public class IntakeSubsystem extends SubsystemBase {
 
     m_storageRoller.setControl(m_request.withVelocity(targetRPS));
 
-    // speed = new DutyCycleOut(DUTYCYCLE_OUTPUT);
-
     if (RobotBase.isSimulation()) {
             simTimer.start();
     }
-
-   // i_limitSwitch = new DigitalInput(0); // DIO 0
   }
 
+//Limit Switch
   public boolean isLimitPressed() {
         if (RobotBase.isSimulation()){
             return simTimer.hasElapsed(5.0);
@@ -68,6 +62,7 @@ public class IntakeSubsystem extends SubsystemBase {
         // If using NC wiring, invert it
     }
 
+  //Timers
     public void resetTimers() {
         simTimer.start();
         simTimer.reset();
@@ -79,20 +74,26 @@ public class IntakeSubsystem extends SubsystemBase {
     
     // This method will be called once per scheduler run
   }
-  public void deployIntake(){
+
+  //MOTOR USES
+
+//Intake Extension
+  public void extendIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
-  public void runIntake() { 
-   m_intakeRoller.set(TAKE_SPEED);
-   m_storageRoller.set(STORAGEROLLER_SPEED);
-  }
-  public void runIntakeRollerBack(){
-    m_intakeRoller.set(-TAKE_SPEED);
-  }
-  public void undeployIntake(){
+  public void retractIntake(){
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+  }
+
+//Normal Runs
+  public void runIntake() { 
+    m_intakeRoller.set(TAKE_SPEED);
+    m_storageRoller.set(STORAGEROLLER_SPEED);
+  }
+  public void runIntakeBack(){
+    m_intakeRoller.set(-TAKE_SPEED);
   }
   public void runStorageRoller(){
     m_storageRoller.set(STORAGEROLLER_SPEED);
@@ -100,44 +101,46 @@ public class IntakeSubsystem extends SubsystemBase {
   public void runStorageRollerBack(){
     m_storageRoller.set(-STORAGEROLLER_SPEED);
   }
+
+//Stops
   public void stopStorage() {
     m_leftLinearScrew.set(0);
     m_rightLinearScrew.set(0);
   }
-  public void stopTake() {
+  public void stopIntake() {
     m_intakeRoller.set(0);
     m_storageRoller.set(0);
   }
 
-//  public boolean isLimitPressed() {
-//    return !i_limitSwitch.get();
-//  }
+  //COMMANDS
 
-  public Command deployIntakeCommand() {
-    return run(this::deployIntake);
+//Extension Commands
+  public Command extendIntakeCommand() {
+    return run(this::extendIntake);
   }
-  public Command undeployIntakeCommand() {
-  return run(this::undeployIntake);
+  public Command retractIntakeCommand() {
+    return run(this::retractIntake);
   }
 
+//Normal Run Commands
   public Command runIntakeCommand() {
     return run(this::runIntake);
   }
-  public Command runIntakeRollerBackCommand(){
-    return run(this::runIntakeRollerBack);
+  public Command runIntakeBackCommand(){
+    return run(this::runIntakeBack);
   }
-
   public Command runStorgeRollersCommand(){
-  return run(this::runStorageRoller);
+    return run(this::runStorageRoller);
   }
   public Command runStorgeRollersBackCommand(){
-  return run(this::runStorageRollerBack);
+    return run(this::runStorageRollerBack);
   }
 
+//Stop Commands
   public Command stopStorageCommand() {
     return runOnce(this::stopStorage);
   }
-  public Command stopTakeCommand() {
-    return runOnce(this::stopTake);
+  public Command stopIntakeCommand() {
+    return runOnce(this::stopIntake);
   }
 }
