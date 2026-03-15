@@ -7,21 +7,14 @@ public class Constants {
 
     public static final double PID_P_VALUE = 0.25;
   
-
-    public static final double DUTYCYCLE_OUTPUT = 0.5;
-
-   
     public static final double TAKE_SPEED = -0.375;
     public static final double STORAGEROLLER_SPEED = 0.25;
 
-    public static final double IN_TAKE_TARGET_ROTATIONS = -5.0;
-    public static final double OUT_TAKE_TARGET_ROTATIONS = 60.5;
+    public static final double IN_TAKE_TARGET_ROTATIONS = -60.0;
+    public static final double OUT_TAKE_TARGET_ROTATIONS = 1.0;
   }
 
   public class Outtake {
-
-    public static final double DUTYCYCLE_OUTPUT = 0.5;
-
     public static final double OUTTAKE_SPEED = 0.98;
     public static final double INDEX_SPEED = 1.0;
 
