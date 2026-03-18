@@ -49,6 +49,11 @@ public class RobotContainer {
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     
     public RobotContainer() {
+        drivetrain.DriveSubsystem();
+        if (AutoBuilder.isConfigured()) {
+            System.out.print("it is configured");
+        }
+        //config
      // For convenience a programmer could change this when going to competition.
      autoChooser = AutoBuilder.buildAutoChooser();
 
@@ -70,7 +75,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
     NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
     NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
-    NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
+    //NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
     }
@@ -78,7 +83,7 @@ public class RobotContainer {
     private void configureBindings() {
         
     //Intake controlls
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeCommand()))
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
         joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
@@ -100,8 +105,10 @@ public class RobotContainer {
                     .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
         
     //Limit Switch
-        new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed)
-            .onTrue(m_IntakeSubsystem.stopStorageCommand());
+        // new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed) 
+        // //.whileTrue(m_IntakeSubsystem.extendIntakeCommand());   
+        // .onTrue(m_IntakeSubsystem.littleExtendIntakeCommand());
+            
 
     //Slow Mode
         joystick.leftBumper().whileTrue(

@@ -5,13 +5,14 @@ public class Constants {
   public class Intake {
     public static final int LIMIT_SWITCH_STORAGE_DIO = 0;
 
-    public static final double PID_P_VALUE = 0.25;
+    public static final double PID_P_VALUE = 0.2;
   
     public static final double TAKE_SPEED = -0.375;
     public static final double STORAGEROLLER_SPEED = 0.25;
 
-    public static final double IN_TAKE_TARGET_ROTATIONS = -60.0;
-    public static final double OUT_TAKE_TARGET_ROTATIONS = 1.0;
+    public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
+    public static double OUT_TAKE_TARGET_ROTATIONS = -70.0;
+    public static final double LIMIT_SWITCH_ROTATIONS = 1.0;
   }
 
   public class Outtake {
