@@ -42,7 +42,7 @@ public class IntakeSubsystem extends SubsystemBase {
   //RPM
     var slot0Configs = new Slot0Configs();
     slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
-    slot0Configs.kI = 0.05;
+    
     // Add kI, kD, kS, kV if needed for better control
     m_leftLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
