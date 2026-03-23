@@ -8,8 +8,8 @@ public class Constants {
     public static final double PID_P_VALUE = 0.4;
   
   
-    public static final double TAKE_SPEED = -0.375;
-    public static final double STORAGEROLLER_SPEED = 0.25;
+    public static final double TAKE_SPEED = -0.250;
+    public static final double STORAGEROLLER_SPEED = 0.10;
 
     public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
     public static double OUT_TAKE_TARGET_ROTATIONS = -73.0;
@@ -18,10 +18,10 @@ public class Constants {
 
   public class Outtake {
     public static final double OUTTAKE_SPEED = 0.98;
-    public static final double INDEX_SPEED = 1.0;
+    public static final double INDEX_SPEED = 0.5;
 
     public static final double OUTTAKE_SPEED_SLOW = 0.5;
-    public static final double INDEX_SPEED_SLOW = 0.5;
+    public static final double INDEX_SPEED_SLOW = 0.25;
 
     public static final double PID_P_VALUE = 0.7;
     // public static final double PID_I_VALUE = 0.25;

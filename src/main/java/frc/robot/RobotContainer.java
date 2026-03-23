@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -49,39 +50,42 @@ public class RobotContainer {
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     
     public RobotContainer() {
-        drivetrain.DriveSubsystem();
-        if (AutoBuilder.isConfigured()) {
-            System.out.print("it is configured");
-        }
+       
+   
+        configureBindings();
+
+    NamedCommands.registerCommand("runIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
+    NamedCommands.registerCommand("stopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
+    NamedCommands.registerCommand("deployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
+    NamedCommands.registerCommand("undepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
+    //NamedCommands.registerCommand("stopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
+    NamedCommands.registerCommand("runOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
+    NamedCommands.registerCommand("stopOuttakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
+
+    drivetrain.DriveSubsystem();
+    if (AutoBuilder.isConfigured()) {
+        System.out.print("it is configured");
+    }
         //config
      // For convenience a programmer could change this when going to competition.
      autoChooser = AutoBuilder.buildAutoChooser();
+     SmartDashboard.putData("Auto Chooser", autoChooser);
 
-    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
-    SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
-    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
-    SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
-    SmartDashboard.putData("Middle start shoot then climb", autoChooser);
-    SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
-    SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
-    SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
-    SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
-    SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
-    SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
+    //   SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Middle start shoot then climb", autoChooser);
+    // SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
+    // SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
 
-        configureBindings();
-
-    NamedCommands.registerCommand("RunIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
-    NamedCommands.registerCommand("StopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
-    NamedCommands.registerCommand("DeployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
-    NamedCommands.registerCommand("UndepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
-    //NamedCommands.registerCommand("StopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
-    NamedCommands.registerCommand("RunOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
-    NamedCommands.registerCommand("StopIntakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
     }
 
     private void configureBindings() {
-        
     //Intake controlls
         joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
