@@ -2,11 +2,14 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
@@ -31,6 +34,8 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+
+
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -83,9 +88,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     return this.getState().Pose;
   }
 
-  public void resetPose(Pose2d pose) {
-    this.resetPose(pose);
-  }
+//   public void resetPose(Pose2d pose) {
+//    // this.resetPose(pose);
+//    this.
+    
+//   }
 
   /** MUST be robot-relative speeds (NOT field-relative) */
   public ChassisSpeeds getRobotRelativeSpeeds() {
