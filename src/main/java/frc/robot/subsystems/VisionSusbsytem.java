@@ -87,13 +87,13 @@ public class VisionSusbsytem extends SubsystemBase {
       targetArea = bestTarget.getArea();         // Size of target in view (0-100)
       
   
-      double distance = Math.sqrt(
+      targetDistance = Math.sqrt(
         Math.pow(bestTarget.getBestCameraToTarget().getX(), 2) +
         Math.pow(bestTarget.getBestCameraToTarget().getY(), 2) +
         Math.pow(bestTarget.getBestCameraToTarget().getZ(), 2)
       );
       
-      SmartDashboard.putNumber("Distance to Target (m)", distance);
+      SmartDashboard.putNumber("Distance to Target (m)", targetDistance);
     } else {
       AprilTagSight = false;
     }
@@ -107,6 +107,7 @@ public class VisionSusbsytem extends SubsystemBase {
     SmartDashboard.putNumber("Area:", targetArea);
   }
 
+  // Obtaining distance to april tag.
   public double getTargetDistance() {
     return targetDistance;
   }
