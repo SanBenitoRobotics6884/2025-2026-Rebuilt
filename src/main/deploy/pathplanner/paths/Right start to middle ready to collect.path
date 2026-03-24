@@ -3,35 +3,35 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 8.130296208525431,
-        "y": 0.8110663507108984
+        "x": 3.562215277777778,
+        "y": 7.555180555555555
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.511223404255318,
-        "y": 0.8267287234042566
+        "x": 5.310125,
+        "y": 7.281118055555555
       },
       "isLocked": false,
-      "linkedName": "Right of midfield"
+      "linkedName": "Right startpoint"
     },
     {
       "anchor": {
-        "x": 3.5517676767676765,
-        "y": 0.6337500000000011
+        "x": 7.794958333333334,
+        "y": 6.775625
       },
       "prevControl": {
-        "x": 4.225487588652482,
-        "y": 0.6578723404255322
+        "x": 4.6036527777777785,
+        "y": 7.439465277777779
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Right start"
+      "linkedName": "MidRight ready to collect"
     }
   ],
   "rotationTargets": [
     {
       "waypointRelativePos": 0.5,
-      "rotationDegrees": 2.320172346844307
+      "rotationDegrees": 0.0
     }
   ],
   "constraintZones": [],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -0.7701209198281259
+    "rotation": -91.4320961841647
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 91.5031706294493
+    "rotation": -0.7701209198281259
   },
   "useDefaultConstraints": true
 }
