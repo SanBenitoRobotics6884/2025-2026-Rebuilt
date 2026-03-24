@@ -13,12 +13,14 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -30,7 +32,9 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
 public class RobotContainer {
-   
+
+    private final Field2d m_field = new Field2d();
+
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed; // Reduce speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -59,7 +63,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("stopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
     NamedCommands.registerCommand("deployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
     NamedCommands.registerCommand("undepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
+    NamedCommands.registerCommand("runRollersCommand", m_IntakeSubsystem.runStorgeRollersCommand());
     //NamedCommands.registerCommand("stopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
+    NamedCommands.registerCommand("runIndexCommand", m_OuttakeSubsystem.runIndexCommand());
     NamedCommands.registerCommand("runOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("stopOuttakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
 

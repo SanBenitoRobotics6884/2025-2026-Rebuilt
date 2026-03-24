@@ -1,0 +1,62 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right start to middle ready to collect"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "deployIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "MidRight collect to pass"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runOuttakecommand"
+          }
+        },
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
