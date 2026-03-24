@@ -16,6 +16,7 @@ import static frc.robot.Constants.Constants.Outtake.*;
 
 public class OuttakeSubsystem extends SubsystemBase {
   TalonFX m_outtakeMotor;
+  
   TalonFX m_indexMotor;
   DutyCycleOut speed;
 
