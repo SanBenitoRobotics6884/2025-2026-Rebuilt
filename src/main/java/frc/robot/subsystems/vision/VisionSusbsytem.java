@@ -78,6 +78,7 @@ public class VisionSusbsytem extends SubsystemBase {
     );
   }
 
+  // If  target is found in the pipeline, then the resulting code should get the data of the BEST target
   if(result.hasTargets()){
       var bestTarget = result.getBestTarget();
       
