@@ -80,7 +80,7 @@ public class RobotContainer {
      autoChooser = AutoBuilder.buildAutoChooser();
      SmartDashboard.putData("Auto Chooser", autoChooser);
 
-    //   SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
     // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
     // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
     // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);

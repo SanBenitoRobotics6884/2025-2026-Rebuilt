@@ -143,7 +143,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Extension Commands
   public Command extendIntakeCommand() {
-    return run(this::extendIntake);
+    return runOnce(this::extendIntake);
   }
   public Command retractIntakeCommand() {
     return run(this::retractIntake);
@@ -154,7 +154,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Normal Run Commands
   public Command runIntakeCommand() {
-    return run(this::runIntake);
+    return runOnce(this::runIntake);
   }
   public Command runIntakeBackCommand(){
     return run(this::runIntakeBack);

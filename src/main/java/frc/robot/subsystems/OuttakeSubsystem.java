@@ -76,13 +76,13 @@ public class OuttakeSubsystem extends SubsystemBase {
 
 //Run Commands
   public Command runOuttakecommand() {
-    return run(this::runOuttake);
+    return runOnce(this::runOuttake);
   }
     public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
   }
     public Command runIndexCommand() {
-      return run(this::runIndex);
+      return runOnce(this::runIndex);
     }
     public Command runReverseIndexCommand() {
     return run(this::reverseIndex);
