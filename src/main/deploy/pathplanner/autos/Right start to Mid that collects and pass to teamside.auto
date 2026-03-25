@@ -35,7 +35,13 @@
           }
         },
         {
-          "type": "sequential",
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "parallel",
           "data": {
             "commands": [
               {
@@ -48,6 +54,31 @@
                 "type": "named",
                 "data": {
                   "name": "runRollersCommand"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexCommand"
                 }
               }
             ]

@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.442588652482269,
-        "y": 7.267393617021277
+        "x": 6.759611111111111,
+        "y": 4.613576388888888
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.857765957446808,
-        "y": 7.339760638297872
+        "x": 6.653803191484801,
+        "y": 7.323679078014526
       },
       "isLocked": false,
-      "linkedName": "Right startpoint"
+      "linkedName": "MidRight pass to teamside"
     },
     {
       "anchor": {
-        "x": 7.794958333333334,
-        "y": 6.775625
+        "x": 3.5420212765957446,
+        "y": 7.2834751773049655
       },
       "prevControl": {
-        "x": 5.8658067375886525,
-        "y": 7.339760638297872
+        "x": 6.062713800231846,
+        "y": 7.429890366430603
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "MidRight ready to collect"
+      "linkedName": "RightStart Going to shoot"
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": 0.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -47,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 89.05125670764761
+    "rotation": -179.0759546472035
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -0.8680514497748859
+    "rotation": 170.5376777919744
   },
   "useDefaultConstraints": true
 }

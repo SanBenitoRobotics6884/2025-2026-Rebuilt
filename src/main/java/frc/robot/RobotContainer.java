@@ -64,8 +64,10 @@ public class RobotContainer {
     NamedCommands.registerCommand("deployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
     NamedCommands.registerCommand("undepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
     NamedCommands.registerCommand("runRollersCommand", m_IntakeSubsystem.runStorgeRollersCommand());
+    NamedCommands.registerCommand("stopRollersCommand", m_IntakeSubsystem.stopStorageCommand());
     //NamedCommands.registerCommand("stopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("runIndexCommand", m_OuttakeSubsystem.runIndexCommand());
+    NamedCommands.registerCommand("stopIndexCommand", m_OuttakeSubsystem.stopIndexCommand());
     NamedCommands.registerCommand("runOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("stopOuttakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
 
