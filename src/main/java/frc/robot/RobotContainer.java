@@ -45,7 +45,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
-    private final Joystick m_Joystick = new Joystick(0);
+    private final CommandXboxController joystickforReset = new CommandXboxController(1);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
@@ -94,6 +94,10 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+    //Extention reset controll
+       joystick.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendresetCommand()))
+                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+
     //Intake controlls
         joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));

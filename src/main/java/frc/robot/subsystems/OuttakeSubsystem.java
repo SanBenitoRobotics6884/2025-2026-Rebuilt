@@ -44,9 +44,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
   }
-
-  //MOTOR USES
-
+/*
+ * MOTOR USES
+ */
 //Normal Run
   public void runOuttake() {
     m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS));
@@ -71,9 +71,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void stopIndex(){
      m_indexMotor.set(0);
   }
-
-  //COMMANDS
-
+/*
+ * COMMANDS
+ */
 //Run Commands
   public Command runOuttakecommand() {
     return runOnce(this::runOuttake);

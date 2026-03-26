@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 6.759611111111111,
-        "y": 4.613576388888888
+        "x": 6.878945035460992,
+        "y": 3.0459840425531923
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.653803191484801,
-        "y": 7.323679078014526
+        "x": 7.739308510635899,
+        "y": 3.029902482263482
       },
       "isLocked": false,
-      "linkedName": "MidRight pass to teamside"
+      "linkedName": "MidLeft ready to pass"
     },
     {
       "anchor": {
-        "x": 3.5420212765957446,
-        "y": 7.2834751773049655
+        "x": 3.1480230496429913,
+        "y": 2.6761081560223476
       },
       "prevControl": {
-        "x": 6.062713800231846,
-        "y": 7.429890366430603
+        "x": 2.88267730496214,
+        "y": 2.7645567375826308
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "RightStart Going to shoot"
+      "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.7272727272727281,
+      "rotationDegrees": -179.42051200217838
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -42,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -179.13194855025438
+    "rotation": 41.71075732150816
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 170.5376777919744
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }
