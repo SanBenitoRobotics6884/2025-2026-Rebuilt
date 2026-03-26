@@ -113,6 +113,12 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
   }
 
+  //Extention reset
+   public void extendReset() {
+    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+  }
+
 //Normal Runs
   public void runIntake() { 
     m_intakeRoller.set(TAKE_SPEED);
@@ -143,7 +149,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Extension Commands
   public Command extendIntakeCommand() {
-    return run(this::extendIntake);
+    return runOnce(this::extendIntake);
   }
   public Command retractIntakeCommand() {
     return run(this::retractIntake);
@@ -151,10 +157,14 @@ public class IntakeSubsystem extends SubsystemBase {
   public Command littleExtendIntakeCommand() {
     return run(this::littleExtenedIntake);
   }
+  //Extention Reset Command
+  public Command extendresetCommand() {
+    return run(this::extendReset);
+  }
 
 //Normal Run Commands
   public Command runIntakeCommand() {
-    return run(this::runIntake);
+    return runOnce(this::runIntake);
   }
   public Command runIntakeBackCommand(){
     return run(this::runIntakeBack);

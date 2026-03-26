@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "middle start to left start"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left start to middle left of midfield"
+            "pathName": "Right start to middle ready to collect"
           }
         },
         {
@@ -25,55 +19,31 @@
         {
           "type": "named",
           "data": {
-            "name": "stopInOutTakeCommand"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.5
-          }
-        },
-        {
-          "type": "named",
-          "data": {
             "name": "runIntakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Left of midfield to right"
+            "pathName": "MidRight collect to pass"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "stopTakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "undeployIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopIntakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right of midfield back to middle of alliance field"
+            "pathName": "From Collecting in Mid to Right start"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right start to middle facing hub"
+            "pathName": "From rightstart to middle to shoot"
           }
         },
         {
@@ -83,15 +53,47 @@
           }
         },
         {
-          "type": "wait",
+          "type": "parallel",
           "data": {
-            "waitTime": 3.0
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              }
+            ]
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexCommand"
+                }
+              }
+            ]
           }
         }
       ]

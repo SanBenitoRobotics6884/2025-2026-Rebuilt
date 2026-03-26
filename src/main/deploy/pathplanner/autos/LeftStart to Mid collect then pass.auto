@@ -7,7 +7,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left start to middle facing hub"
+            "pathName": "LeftStart to Mid Ready to collect"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "deployIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LeftMid collect to pass"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIntakeCommand"
           }
         },
         {
@@ -17,51 +41,22 @@
           }
         },
         {
-          "type": "wait",
+          "type": "parallel",
           "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Middle to climb base"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "climbUpCommand"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopClimbCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "climbDownCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopClimbCommand"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              }
+            ]
           }
         }
       ]

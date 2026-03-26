@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.563219696969697,
-        "y": 4.046452020202021
+        "x": 6.878945035460992,
+        "y": 3.0459840425531923
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.9182323232323233,
-        "y": 4.069356060606062
+        "x": 7.739308510635899,
+        "y": 3.029902482263482
       },
       "isLocked": false,
-      "linkedName": "middle start"
+      "linkedName": "MidLeft ready to pass"
     },
     {
       "anchor": {
-        "x": 1.513308080808081,
-        "y": 3.777085308056871
+        "x": 3.1480230496429913,
+        "y": 2.6761081560223476
       },
       "prevControl": {
-        "x": 1.2634812310209897,
-        "y": 3.7863882713190864
+        "x": 2.88267730496214,
+        "y": 2.7645567375826308
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Base of climb"
+      "linkedName": null
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.7272727272727281,
+      "rotationDegrees": -179.42051200217838
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -42,7 +47,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 41.71075732150816
   },
   "reversed": false,
   "folder": null,

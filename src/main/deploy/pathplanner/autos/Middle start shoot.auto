@@ -1,0 +1,75 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "middle start to shoot"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runOuttakecommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexCommand"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

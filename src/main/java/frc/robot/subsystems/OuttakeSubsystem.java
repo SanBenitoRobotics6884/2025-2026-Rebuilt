@@ -16,6 +16,7 @@ import static frc.robot.Constants.Constants.Outtake.*;
 
 public class OuttakeSubsystem extends SubsystemBase {
   TalonFX m_outtakeMotor;
+  
   TalonFX m_indexMotor;
   DutyCycleOut speed;
 
@@ -43,9 +44,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
   }
-
-  //MOTOR USES
-
+/*
+ * MOTOR USES
+ */
 //Normal Run
   public void runOuttake() {
     m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS));
@@ -70,18 +71,18 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void stopIndex(){
      m_indexMotor.set(0);
   }
-
-  //COMMANDS
-
+/*
+ * COMMANDS
+ */
 //Run Commands
   public Command runOuttakecommand() {
-    return run(this::runOuttake);
+    return runOnce(this::runOuttake);
   }
     public Command runOuttakeSlowCommand() {
     return run(this::runOuttakeSlow);
   }
     public Command runIndexCommand() {
-      return run(this::runIndex);
+      return runOnce(this::runIndex);
     }
     public Command runReverseIndexCommand() {
     return run(this::reverseIndex);
