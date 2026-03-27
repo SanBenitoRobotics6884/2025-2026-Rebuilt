@@ -53,27 +53,28 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "runOuttakecommand"
-          }
-        },
-        {
           "type": "wait",
           "data": {
             "waitTime": 1.0
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "runRollersCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "runIndexCommand"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              }
+            ]
           }
         },
         {
