@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -30,7 +31,10 @@ public class VisionSusbsytem extends SubsystemBase {
   PhotonCamera m_randomAssCamera = new PhotonCamera("HD_USB_CAMERA");
   //PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
   AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-  Transform3d robotTocam = new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0,0,0));
+  Transform3d robotTocam = new Transform3d(new Translation3d(
+    Units.inchesToMeters(11.25), //These are rough estimates,
+    Units.inchesToMeters(5),     //we'll adjust them as we go if they prove to be inaccurate. 
+    Units.inchesToMeters(8.5)), new Rotation3d(0,0,0));
  PhotonPoseEstimator m_poseEstimator = new PhotonPoseEstimator(layout, robotTocam);
 
   boolean AprilTagSight = false;
