@@ -23,6 +23,12 @@
           }
         },
         {
+          "type": "path",
+          "data": {
+            "pathName": "MidRight collect to pass"
+          }
+        },
+        {
           "type": "wait",
           "data": {
             "waitTime": 1.0
@@ -35,59 +41,21 @@
           }
         },
         {
-          "type": "path",
-          "data": {
-            "pathName": "MidRight collect to pass"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "runOuttakecommand"
           }
         },
         {
-          "type": "parallel",
+          "type": "wait",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "runIndexCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "runRollersCommand"
-                }
-              }
-            ]
+            "waitTime": 0.5
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopRollersCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopIndexCommand"
-                }
-              }
-            ]
           }
         }
       ]

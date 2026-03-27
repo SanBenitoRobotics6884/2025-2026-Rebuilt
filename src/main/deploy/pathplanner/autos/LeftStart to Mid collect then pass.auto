@@ -17,6 +17,18 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopStorageCommand"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "runIntakeCommand"
@@ -41,22 +53,39 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "wait",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "runIndexCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "runRollersCommand"
-                }
-              }
-            ]
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runRollersCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
           }
         }
       ]

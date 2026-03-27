@@ -13,6 +13,48 @@
         {
           "type": "named",
           "data": {
+            "name": "deployIntakeCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopStorageCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIntakeCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIntakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "runOuttakecommand"
           }
         },
@@ -23,47 +65,39 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "runIndexCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "runRollersCommand"
-                }
-              }
-            ]
+            "name": "runRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopRollersCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopIndexCommand"
-                }
-              }
-            ]
           }
         }
       ]

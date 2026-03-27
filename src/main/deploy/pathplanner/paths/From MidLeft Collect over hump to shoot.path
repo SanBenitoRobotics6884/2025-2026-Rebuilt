@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 6.878945035460992,
-        "y": 3.0459840425531923
+        "x": 6.730377777777778,
+        "y": 3.0605555555555553
       },
       "prevControl": null,
       "nextControl": {
-        "x": 7.739308510635899,
-        "y": 3.029902482263482
+        "x": 7.590741252952685,
+        "y": 3.044473995265845
       },
       "isLocked": false,
       "linkedName": "MidLeft ready to pass"
     },
     {
       "anchor": {
-        "x": 3.1480230496429913,
-        "y": 2.6761081560223476
+        "x": 2.8715777777777785,
+        "y": 2.719499999999999
       },
       "prevControl": {
-        "x": 2.88267730496214,
-        "y": 2.7645567375826308
+        "x": 2.6062320330969273,
+        "y": 2.8079485815602823
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,7 +31,7 @@
   "rotationTargets": [
     {
       "waypointRelativePos": 0.7272727272727281,
-      "rotationDegrees": -179.42051200217838
+      "rotationDegrees": -179.4205120021784
     }
   ],
   "constraintZones": [],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 41.71075732150816
+    "rotation": -148.5704343851615
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.4671615074384727
   },
   "useDefaultConstraints": true
 }

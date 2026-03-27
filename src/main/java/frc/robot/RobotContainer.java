@@ -35,7 +35,7 @@ public class RobotContainer {
     private final Field2d m_field = new Field2d();
 
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double slowSpeed=0.5; // Reduce speed
+    private double slowSpeed = SLOW_SWERVE_SPEED; // Reduce speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -54,20 +54,21 @@ public class RobotContainer {
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
     
     public RobotContainer() {
-       
-   
+        
         configureBindings();
 
     NamedCommands.registerCommand("runIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
+    NamedCommands.registerCommand("runIntakeBackCommand", m_IntakeSubsystem.runIntakeBackteleCommand());
     NamedCommands.registerCommand("stopIntakeCommand", m_IntakeSubsystem.stopIntakeCommand());
     NamedCommands.registerCommand("deployIntakeCommand", m_IntakeSubsystem.extendIntakeCommand());
+    NamedCommands.registerCommand("stopStorageCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("undepolyIntakeCommand", m_IntakeSubsystem.retractIntakeCommand());
     NamedCommands.registerCommand("runRollersCommand", m_IntakeSubsystem.runStorgeRollersCommand());
-    NamedCommands.registerCommand("stopRollersCommand", m_IntakeSubsystem.stopStorageCommand());
+    NamedCommands.registerCommand("stopRollersCommand", m_IntakeSubsystem.stopRollerCommand());
     //NamedCommands.registerCommand("stopInOutTakeCommand", m_IntakeSubsystem.stopStorageCommand());
     NamedCommands.registerCommand("runIndexCommand", m_OuttakeSubsystem.runIndexCommand());
     NamedCommands.registerCommand("stopIndexCommand", m_OuttakeSubsystem.stopIndexCommand());
-    NamedCommands.registerCommand("runOuttakeCommand", m_OuttakeSubsystem.runOuttakecommand());
+    NamedCommands.registerCommand("runOuttakecommand", m_OuttakeSubsystem.runOuttakecommand());
     NamedCommands.registerCommand("stopOuttakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
 
     drivetrain.DriveSubsystem();
@@ -99,25 +100,25 @@ public class RobotContainer {
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
 
     //Intake controlls
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeCommand()))
+        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeTeleCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeCommand()))
+        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeTeleCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeCommand()))
+        joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntaketeleCommand()))
                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersCommand()))
+        joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersteleCommand()))
                     .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackCommand()))
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackteleCommand()))
                     .whileFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackCommand()))
+        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackteleCommand()))
                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
         
     //OutTake controlls
-        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttakecommand()))
+        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttaketelecommand()))
                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexCommand()))
+        joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexteleCommand()))
                     .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
-        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexCommand()))
+        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexteleCommand()))
                     .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
         
     //Limit Switch

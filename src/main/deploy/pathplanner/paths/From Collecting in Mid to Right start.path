@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.653803191484801,
-        "y": 7.323679078014526
+        "x": 6.788844444444444,
+        "y": 7.659933333333333
       },
       "isLocked": false,
       "linkedName": "MidRight pass to teamside"
@@ -20,8 +20,8 @@
         "y": 7.2834751773049655
       },
       "prevControl": {
-        "x": 6.062713800231846,
-        "y": 7.429890366430603
+        "x": 6.447788888888889,
+        "y": 7.679422222222222
       },
       "nextControl": null,
       "isLocked": false,
@@ -48,7 +48,7 @@
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 170.5376777919744
+    "rotation": -24.161534242656803
   },
   "useDefaultConstraints": true
 }

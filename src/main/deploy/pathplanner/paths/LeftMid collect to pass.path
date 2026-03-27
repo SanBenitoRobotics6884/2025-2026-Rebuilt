@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.020735815602837,
-        "y": 3.2228812056737595
+        "x": 7.841244444444444,
+        "y": 3.538033333333334
       },
       "isLocked": false,
       "linkedName": "LeftMid ready collect"
     },
     {
       "anchor": {
-        "x": 6.878945035460992,
-        "y": 3.0459840425531923
+        "x": 6.730377777777778,
+        "y": 3.0605555555555553
       },
       "prevControl": {
-        "x": 8.020735815602837,
-        "y": 3.206799645390072
+        "x": 8.075111111111111,
+        "y": 3.5867555555555555
       },
       "nextControl": null,
       "isLocked": false,
@@ -30,8 +30,8 @@
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": -90.0
+      "waypointRelativePos": 0.8412598425196723,
+      "rotationDegrees": 90.0
     }
   ],
   "constraintZones": [],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 0.4671615074384727
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -90.0
+    "rotation": 90.68459196410817
   },
   "useDefaultConstraints": true
 }
