@@ -39,4 +39,8 @@ public class Constants {
     public static final int D_PAD_RIGHT = 180;
     public static final int D_PAD_UP = 270;
   }
+
+  public class Vision {
+    
+  }
 }

@@ -44,9 +44,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
   }
-
-  //MOTOR USES
-
+/*
+ * MOTOR USES
+ */
 //Normal Run
   public void runOuttake() {
     m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS));
@@ -71,20 +71,33 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void stopIndex(){
      m_indexMotor.set(0);
   }
-
-  //COMMANDS
-
-//Run Commands
-  public Command runOuttakecommand() {
+/*
+ * COMMANDS
+ */
+// Run Auto Commands
+ public Command runOuttakecommand() {
     return runOnce(this::runOuttake);
   }
     public Command runOuttakeSlowCommand() {
-    return run(this::runOuttakeSlow);
+    return runOnce(this::runOuttakeSlow);
   }
     public Command runIndexCommand() {
       return runOnce(this::runIndex);
     }
     public Command runReverseIndexCommand() {
+    return runOnce(this::reverseIndex);
+  }
+//Run Commands
+  public Command runOuttaketelecommand() {
+    return run(this::runOuttake);
+  }
+    public Command runOuttakeSlowteleCommand() {
+    return run(this::runOuttakeSlow);
+  }
+    public Command runIndexteleCommand() {
+      return run(this::runIndex);
+    }
+    public Command runReverseIndexteleCommand() {
     return run(this::reverseIndex);
   }
 

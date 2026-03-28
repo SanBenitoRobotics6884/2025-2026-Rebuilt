@@ -4,15 +4,20 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.HootAutoReplay;
 
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.VideoSource;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
+    Optional<Alliance> alliance;
 
     @Override
     public void robotInit() {
@@ -64,6 +69,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
+        alliance = DriverStation.getAlliance();
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }

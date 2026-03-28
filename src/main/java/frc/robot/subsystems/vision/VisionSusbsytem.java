@@ -7,21 +7,28 @@ package frc.robot.subsystems.vision;
 import java.util.List;
 import java.util.Optional;
 
+import org.opencv.photo.Photo;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonUtils;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -30,9 +37,12 @@ public class VisionSusbsytem extends SubsystemBase {
   PhotonCamera m_randomAssCamera = new PhotonCamera("HD_USB_CAMERA");
   //PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
   AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-  Transform3d robotTocam = new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0,0,0));
- PhotonPoseEstimator m_poseEstimator = new PhotonPoseEstimator(layout, robotTocam);
-
+  Transform3d robotTocam = new Transform3d(new Translation3d(
+    Units.inchesToMeters(11.25), //These are rough estimates,
+    Units.inchesToMeters(5),     //we'll adjust them as we go if they prove to be inaccurate. 
+    Units.inchesToMeters(8.5)), new Rotation3d(0,0,0));
+  PhotonPoseEstimator m_poseEstimator = new PhotonPoseEstimator(layout, robotTocam);
+  Optional<Alliance> alliance = DriverStation.getAlliance();
   boolean AprilTagSight = false;
 
   double targetYaw;
@@ -53,7 +63,6 @@ public class VisionSusbsytem extends SubsystemBase {
   var results = m_randomAssCamera.getAllUnreadResults();
 
   SmartDashboard.putNumber("Camera Results Count", results.size());
-
   for(var result : results){
     Optional<EstimatedRobotPose> pose = m_poseEstimator.update(result);
 
@@ -69,38 +78,47 @@ public class VisionSusbsytem extends SubsystemBase {
     SmartDashboard.putNumber("Vision Pose X", robotPose.getX());
     SmartDashboard.putNumber("Vision Pose Y", robotPose.getY());
     SmartDashboard.putNumber("Vision Pose Angle", robotPose.getRotation().getDegrees());
-        
-        m_drivetrain.addVisionMeasurement(robotPose, pose.get().timestampSeconds);
 
+    // Corrects odometry pose estimate using vision measurement.
     m_drivetrain.addVisionMeasurement(
                 robotPose, 
                 pose.get().timestampSeconds
     );
   }
 
-  // If  target is found in the pipeline, then the resulting code should get the data of the BEST target
+  // If target is found in the pipeline, then the resulting code should get the data of the BEST target
   if(result.hasTargets()){
       var bestTarget = result.getBestTarget();
-      
+      if (alliance.isPresent()) {
+
+        if(alliance.get() == Alliance.Red) {
+           for (PhotonTrackedTarget target : result.getTargets()) {
+              if (target.getFiducialId() == 9) {
+                
+              }
+          }
+
+        } else if (alliance.get() == Alliance.Blue) {
+          for (PhotonTrackedTarget target : result.getTargets()) {
+              if (target.getFiducialId() == 25) {
+               
+              }
+          }
+
+        }
+      };
+
       AprilTagSight = true;
       targetYaw = bestTarget.getYaw();           // Horizontal angle to target
       targetPitch = bestTarget.getPitch();       // Vertical angle to target
       targetSkew = bestTarget.getSkew();         // Rotation angle of target
       targetArea = bestTarget.getArea();         // Size of target in view (0-100)
       
-  
-      targetDistance = Math.sqrt(
-        Math.pow(bestTarget.getBestCameraToTarget().getX(), 2) +
-        Math.pow(bestTarget.getBestCameraToTarget().getY(), 2) +
-        Math.pow(bestTarget.getBestCameraToTarget().getZ(), 2)
-      );
-      
       SmartDashboard.putNumber("Distance to Target (m)", targetDistance);
     } else {
       AprilTagSight = false;
     }
   }
-
 
     SmartDashboard.putBoolean("April Tag", AprilTagSight);
     SmartDashboard.putNumber("Yaw:", targetYaw);
@@ -109,9 +127,24 @@ public class VisionSusbsytem extends SubsystemBase {
     SmartDashboard.putNumber("Area:", targetArea);
   }
 
-  // Obtaining distance to april tag.
-  public double getTargetDistance() {
+  // Obtaining distance to april tags on hubs.
+  public double getHubTargetDistance(Alliance alliance) {
+    if(alliance == Alliance.Red) {
+      return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
+        0, 
+        0, 
+        0, 
+        0);
+        
+    } else if (alliance == Alliance.Blue){
+      return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
+        0, 
+        0, 
+        0, 
+        0);
+    } else {
     return targetDistance;
+    }
   }
 }
 
