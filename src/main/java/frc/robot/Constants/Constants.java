@@ -1,5 +1,8 @@
 package frc.robot.Constants;
 
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Unit;
+
 public class Constants {
   
   public class Intake {
@@ -33,6 +36,8 @@ public class Constants {
 
     public static final int CONTROLER_PORT = 0;
 
+    // These are incorrect, please fix them after competiton. POV degrees start with the top being 0 and the bottom being 180.
+    // Therefore, D_PAD_DOWN is not 90, it would be 180. Fix these when possible and relay it to the drive team.
     // From POV angles, it is translated to D-Pad buttons:
     public static final int D_PAD_LEFT = 0;
     public static final int D_PAD_DOWN = 90;
@@ -41,6 +46,14 @@ public class Constants {
   }
 
   public class Vision {
-    
+    public static final double CAM_HEIGHT = Units.inchesToMeters(8.5);
+    public static final double APRIL_TAG_HUB_HIEGHT = Units.inchesToMeters(44.25);
+
+    // FIDUCIAL IDS
+    public static final int RED_HUB_FIDUCIAL_L = 9;
+    public static final int RED_HUB_FIDUCIAL_R = 10;
+
+    public static final int BLUE_HUB_FIDUCIAL_L = 25;
+    public static final int BLUE_HUB_FIDUCIAL_R = 26;
   }
 }

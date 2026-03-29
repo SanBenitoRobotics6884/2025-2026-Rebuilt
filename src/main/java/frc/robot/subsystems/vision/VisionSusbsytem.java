@@ -33,8 +33,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 
+import static frc.robot.Constants.Constants.Vision.*;
+
 public class VisionSusbsytem extends SubsystemBase {
   PhotonCamera m_randomAssCamera = new PhotonCamera("HD_USB_CAMERA");
+  //PhotonCamera m_driverCamera = new PhotonCamera(getName());
   //PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
   AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
   Transform3d robotTocam = new Transform3d(new Translation3d(
@@ -89,19 +92,19 @@ public class VisionSusbsytem extends SubsystemBase {
   // If target is found in the pipeline, then the resulting code should get the data of the BEST target
   if(result.hasTargets()){
       var bestTarget = result.getBestTarget();
-      if (alliance.isPresent()) {
 
+      if (alliance.isPresent()) {
         if(alliance.get() == Alliance.Red) {
            for (PhotonTrackedTarget target : result.getTargets()) {
               if (target.getFiducialId() == 9) {
-                
+                getHubTargetDistance();  
               }
           }
 
         } else if (alliance.get() == Alliance.Blue) {
           for (PhotonTrackedTarget target : result.getTargets()) {
               if (target.getFiducialId() == 25) {
-               
+                getHubTargetDistance();
               }
           }
 
@@ -128,23 +131,19 @@ public class VisionSusbsytem extends SubsystemBase {
   }
 
   // Obtaining distance to april tags on hubs.
-  public double getHubTargetDistance(Alliance alliance) {
-    if(alliance == Alliance.Red) {
-      return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
-        0, 
-        0, 
-        0, 
-        0);
-        
-    } else if (alliance == Alliance.Blue){
-      return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
-        0, 
-        0, 
-        0, 
-        0);
-    } else {
+  public double getHubTargetDistance() {
+    targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
+                  CAM_HEIGHT,
+                  APRIL_TAG_HUB_HIEGHT,
+                  0,
+                  0
+                );
     return targetDistance;
     }
+
+  public void camSnapshot() {
+    m_randomAssCamera.takeInputSnapshot();
+    m_randomAssCamera.takeOutputSnapshot();
   }
 }
 
