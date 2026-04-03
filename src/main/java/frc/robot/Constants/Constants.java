@@ -9,7 +9,11 @@ public class Constants {
   
   
     public static final double TAKE_SPEED = -0.250;
-    public static final double STORAGEROLLER_SPEED = 0.10;
+    public static final double STORAGEROLLER_SPEED = 0.15;
+
+    /* Lowkey, just switch the rotation direciton (negative to pos)
+     if robot was zeroed while the intake was out.
+     */
 
     public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
     public static double OUT_TAKE_TARGET_ROTATIONS = -73.0;

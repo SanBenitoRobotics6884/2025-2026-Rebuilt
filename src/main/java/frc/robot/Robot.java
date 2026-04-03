@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.HootAutoReplay;
 
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoSource;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,7 +19,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         // Start the camera server with default settings
         //CameraServer.addCamera(VideoSource.Kind.kUsb);
-        CameraServer.startAutomaticCapture();
+        UsbCamera m_driverCam = CameraServer.startAutomaticCapture();
     }
 
     private Command m_autonomousCommand;

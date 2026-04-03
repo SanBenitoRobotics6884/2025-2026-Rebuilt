@@ -108,7 +108,7 @@ public class Telemetry {
 
         m_poseArray[0] = state.Pose.getX();
         m_poseArray[1] = state.Pose.getY();
-        m_poseArray[2] = state.Pose.getRotation().getDegrees();
+        m_poseArray[2] = state.Pose.getRotation().getRadians();
         fieldPub.set(m_poseArray);
 
         /* Telemeterize each module state to a Mechanism2d */

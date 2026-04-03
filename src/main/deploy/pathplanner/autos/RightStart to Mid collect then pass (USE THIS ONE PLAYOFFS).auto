@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right start to middle ready to collect"
+            "pathName": "LeftStart to Mid Ready to collect"
           }
         },
         {
@@ -29,15 +29,15 @@
           }
         },
         {
-          "type": "named",
+          "type": "path",
           "data": {
-            "name": "runIntakeCommand"
+            "pathName": "LeftMid collect to pass"
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "MidRight collect to pass"
+            "name": "runIntakeCommand"
           }
         },
         {
@@ -55,13 +55,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "From Collecting in Mid to Right start"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "From rightstart to middle to shoot"
+            "pathName": "From MidLeft Collect over hump to shoot"
           }
         },
         {
@@ -73,7 +67,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 1.5
+            "waitTime": 1.0
           }
         },
         {
@@ -83,13 +77,44 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "runRollersCommand"
+                  "name": "stopRollersCommand"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "runIndexCommand"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopIndexCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "stopRollersCommand"
                 }
               }
             ]

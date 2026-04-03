@@ -55,7 +55,6 @@ public class RobotContainer {
     
     public RobotContainer() {
         
-        configureBindings();
 
     NamedCommands.registerCommand("runIntakeCommand", m_IntakeSubsystem.runIntakeCommand());
     NamedCommands.registerCommand("runIntakeBackCommand", m_IntakeSubsystem.runIntakeBackteleCommand());
@@ -91,6 +90,7 @@ public class RobotContainer {
     // SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
     // SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
     // SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
+            configureBindings();
 
     }
 

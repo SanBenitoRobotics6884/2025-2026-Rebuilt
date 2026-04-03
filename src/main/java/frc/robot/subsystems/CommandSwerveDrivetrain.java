@@ -10,6 +10,7 @@ import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
@@ -70,10 +71,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         this::getPose,
         this::resetPose,
         this::getRobotRelativeSpeeds,
-        (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
+        // (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
+        (speeds, feedforwards) -> this.setControl(
+            new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds)
+            .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+            .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+            .withDriveRequestType(com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType.Velocity)
+            
+        ),
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), // translation
-            new PIDConstants(5.0, 0.0, 0.0)  // rotation
+            new PIDConstants(2.0, 0.0, 0.0)  // rotation
         ),
         config,
         () -> DriverStation.getAlliance().isPresent()
