@@ -26,7 +26,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         // Start the camera server with default settings
         //CameraServer.addCamera(VideoSource.Kind.kUsb);
-        UsbCamera m_driverCam = CameraServer.startAutomaticCapture();
+        m_driverCam = CameraServer.startAutomaticCapture();
     }
 
     private Command m_autonomousCommand;
