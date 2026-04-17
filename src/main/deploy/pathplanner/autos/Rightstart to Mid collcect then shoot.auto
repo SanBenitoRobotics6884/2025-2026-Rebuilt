@@ -59,12 +59,6 @@
           }
         },
         {
-          "type": "path",
-          "data": {
-            "pathName": "From rightstart to middle to shoot"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "runOuttakecommand"
@@ -93,6 +87,30 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
           }
         }
       ]
