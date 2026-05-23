@@ -91,27 +91,9 @@ public class VisionSusbsytem extends SubsystemBase {
 
   // If target is found in the pipeline, then the resulting code should get the data of the BEST target
   if(result.hasTargets()){
+    AprilTagSight = true;
+    
       var bestTarget = result.getBestTarget();
-
-      if (alliance.isPresent()) {
-        if(alliance.get() == Alliance.Red) {
-           for (PhotonTrackedTarget target : result.getTargets()) {
-              if (target.getFiducialId() == 9) {
-                getHubTargetDistance();  
-              }
-          }
-
-        } else if (alliance.get() == Alliance.Blue) {
-          for (PhotonTrackedTarget target : result.getTargets()) {
-              if (target.getFiducialId() == 25) {
-                getHubTargetDistance();
-              }
-          }
-
-        }
-      };
-
-      AprilTagSight = true;
       targetYaw = bestTarget.getYaw();           // Horizontal angle to target
       targetPitch = bestTarget.getPitch();       // Vertical angle to target
       targetSkew = bestTarget.getSkew();         // Rotation angle of target
@@ -135,8 +117,8 @@ public class VisionSusbsytem extends SubsystemBase {
     targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
                   CAM_HEIGHT,
                   APRIL_TAG_HUB_HIEGHT,
-                  0,
-                  0
+                  CAM_PITCH_RADIANS,
+                  TARGET_PITCH_RADIANS
                 );
     return targetDistance;
     }

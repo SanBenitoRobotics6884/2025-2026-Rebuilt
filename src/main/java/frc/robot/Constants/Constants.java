@@ -1,5 +1,7 @@
 package frc.robot.Constants;
 
+import java.util.List;
+
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Unit;
 
@@ -53,10 +55,12 @@ public class Constants {
     public static final double CAM_HEIGHT = Units.inchesToMeters(8.5);
     public static final double APRIL_TAG_HUB_HIEGHT = Units.inchesToMeters(44.25);
 
+    public static final double CAM_PITCH_RADIANS = Units.degreesToRadians(0);
+    public static final double TARGET_PITCH_RADIANS = Units.degreesToRadians(0);
     // FIDUCIAL IDS
     public static final int RED_HUB_FIDUCIAL_L = 9;
     public static final int RED_HUB_FIDUCIAL_R = 10;
-
+    
     public static final int BLUE_HUB_FIDUCIAL_L = 25;
     public static final int BLUE_HUB_FIDUCIAL_R = 26;
   }
