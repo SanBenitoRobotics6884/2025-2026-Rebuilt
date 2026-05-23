@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.5420212765957446,
-        "y": 7.2834751773049655
+        "x": 7.061688888888889,
+        "y": 4.424777777777778
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.204308510638297,
-        "y": 7.347801418439717
+        "x": 6.516,
+        "y": 5.516155555555556
       },
       "isLocked": false,
-      "linkedName": "RightStart Going to shoot"
+      "linkedName": "MidRight pass to teamside"
     },
     {
       "anchor": {
-        "x": 3.164104609929078,
-        "y": 6.173847517730496
+        "x": 6.4088111111111115,
+        "y": 5.779255555555555
       },
       "prevControl": {
-        "x": 3.1801861702127656,
-        "y": 7.2432712765957445
+        "x": 6.730377777777778,
+        "y": 5.116633333333333
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "in Teamside ready shoot"
+      "linkedName": "Midleft pass"
     }
   ],
   "rotationTargets": [],
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 128.9780722680018
+    "rotation": 8.383248480929362
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -179.13194855025438
+    "rotation": 178.8766972859246
   },
   "useDefaultConstraints": true
 }

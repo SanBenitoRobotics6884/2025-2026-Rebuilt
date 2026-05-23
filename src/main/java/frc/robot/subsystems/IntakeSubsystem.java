@@ -113,7 +113,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
   }
 
-  //Extention reset
+//Extention reset
    public void extendReset() {
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));

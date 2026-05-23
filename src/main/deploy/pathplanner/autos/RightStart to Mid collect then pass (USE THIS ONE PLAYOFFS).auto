@@ -71,22 +71,15 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopRollersCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "runIndexCommand"
-                }
-              }
-            ]
+            "name": "runRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
           }
         },
         {
@@ -102,22 +95,15 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopIndexCommand"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "stopRollersCommand"
-                }
-              }
-            ]
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
           }
         }
       ]
