@@ -12,6 +12,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -45,7 +46,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
-    private final CommandXboxController joystickforReset = new CommandXboxController(1);
+    private final CommandXboxController joystickOp = new CommandXboxController(1);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     
@@ -82,31 +83,62 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-    //Extention reset controll
-       joystickforReset.pov(D_PAD_LEFT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendresetCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-
-    //Intake controlls
-        joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeTeleCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeTeleCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
-        joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntaketeleCommand()))
-                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersteleCommand()))
-                    .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackteleCommand()))
-                    .whileFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackteleCommand()))
-                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
-        
-    //OutTake controlls
-        joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttaketelecommand()))
-                               .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
-        joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexteleCommand()))
-                    .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
-        joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexteleCommand()))
-                    .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+        int controllerMode = 0;
+        boolean isDriverControllerConnected = DriverStation.isJoystickConnected(0);
+        boolean isOpControllerConnected = DriverStation.isJoystickConnected(1);
+        if (isDriverControllerConnected && isOpControllerConnected) {
+            controllerMode = 1; // 1st mode: both controllers operates
+        } else {
+            controllerMode = 0; // Default mode: one controller operates
+        }
+        switch (controllerMode) {
+            case 1:
+                //Intake controlls
+                    joystickOp.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeTeleCommand()))
+                                               .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+                    joystickOp.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeTeleCommand()))
+                                              .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+                    joystickOp.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntaketeleCommand()))
+                                            .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystickOp.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersteleCommand()))
+                                  .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystickOp.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackteleCommand()))
+                                  .whileFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystickOp.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackteleCommand()))
+                                  .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    
+                //OutTake controlls
+                    joystickOp.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttaketelecommand()))
+                                             .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
+                    joystickOp.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexteleCommand()))
+                                  .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+                    joystickOp.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexteleCommand()))
+                                  .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+                break;
+            default:
+                //Intake controlls
+                    joystick.pov(D_PAD_RIGHT).whileTrue(Commands.sequence(m_IntakeSubsystem.extendIntakeTeleCommand()))
+                                             .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+                    joystick.pov(D_PAD_DOWN).whileTrue(Commands.sequence(m_IntakeSubsystem.retractIntakeTeleCommand()))
+                                            .onFalse(Commands.sequence(m_IntakeSubsystem.stopStorageCommand()));
+                    joystick.leftTrigger().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntaketeleCommand()))
+                                          .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystick.b().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersteleCommand()))
+                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runStorgeRollersBackteleCommand()))
+                                .whileFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    joystick.a().whileTrue(Commands.sequence(m_IntakeSubsystem.runIntakeBackteleCommand()))
+                                .onFalse(Commands.sequence(m_IntakeSubsystem.stopIntakeCommand()));
+                    
+                //OutTake controlls
+                    joystick.rightTrigger().whileTrue(Commands.sequence(m_OuttakeSubsystem.runOuttaketelecommand()))
+                                           .onFalse(Commands.sequence(m_OuttakeSubsystem.stopOuttakeCommand()));
+                    joystick.b().whileTrue(Commands.sequence(m_OuttakeSubsystem.runIndexteleCommand()))
+                                .onFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+                    joystick.x().whileTrue(Commands.sequence(m_OuttakeSubsystem.runReverseIndexteleCommand()))
+                                .whileFalse(Commands.sequence(m_OuttakeSubsystem.stopIndexCommand()));
+        }
+    
         
     //Limit Switch
         // new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed) 
