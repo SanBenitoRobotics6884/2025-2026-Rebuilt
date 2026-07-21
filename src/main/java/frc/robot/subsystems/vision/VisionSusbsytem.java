@@ -136,15 +136,5 @@ private CommandSwerveDrivetrain m_drivetrain;
     }
     
   }
-  //*Align the bot to the hub*/
-  public void robotAlign() {
-    if (alliance.get().equals(Alliance.Red)) {
-    
-    } else if (alliance.get().equals(Alliance.Blue)) {
-
-    } else {
-
-    }
-  }
 }
 
