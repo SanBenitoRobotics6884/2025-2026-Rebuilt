@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.164104609929078,
-        "y": 6.173847517730496
+        "x": 2.7643888888949646,
+        "y": 6.032611111115699
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0997783687943263,
-        "y": 7.412127659574468
+        "x": 2.700062647760213,
+        "y": 7.270891252959671
       },
       "isLocked": false,
       "linkedName": "in Teamside ready shoot"
@@ -47,7 +47,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 179.76195569054713
+    "rotation": 0.33989054500559174
   },
   "reversed": false,
   "folder": null,

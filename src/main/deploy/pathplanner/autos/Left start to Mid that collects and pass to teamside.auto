@@ -17,6 +17,18 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopStorageCommand"
+          }
+        },
+        {
           "type": "named",
           "data": {
             "name": "runIntakeCommand"
@@ -29,15 +41,15 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "stopIntakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "from collecting to pass"
           }
         },
         {
@@ -49,13 +61,43 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runRollersCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
           }
         }
       ]

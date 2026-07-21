@@ -29,12 +29,6 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "runIntakeCommand"
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "LeftMid collect to pass"
@@ -43,7 +37,25 @@
         {
           "type": "named",
           "data": {
+            "name": "runIntakeCommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
             "name": "stopIntakeCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "From MidLeft Collect over hump to shoot"
           }
         },
         {
@@ -55,13 +67,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "runIndexCommand"
+            "waitTime": 1.0
           }
         },
         {
@@ -71,9 +77,21 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
+          }
+        },
+        {
           "type": "wait",
           "data": {
             "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopOuttakeCommand"
           }
         },
         {

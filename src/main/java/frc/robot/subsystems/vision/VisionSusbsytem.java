@@ -103,6 +103,8 @@ private CommandSwerveDrivetrain m_drivetrain;
         HUB_APRIL_TAG_HEIGHT, 
         HUB_CAM_PITCH, 
         HUB_APRIL_TAG_PITCH);
+        // Not done yet, but instead, just grab all the data from the current id obtained, it's easier if possible.
+        // If necessary, just grab the data from specific targets if necessary.
   }
 
   /** Camera snapshots both input and output. */

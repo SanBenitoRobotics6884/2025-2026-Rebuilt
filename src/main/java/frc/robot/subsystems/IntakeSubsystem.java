@@ -48,7 +48,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.setControl(new Follower(m_leftLinearScrew.getDeviceID(), MotorAlignmentValue.Aligned));
     final VelocityVoltage m_request = new VelocityVoltage(0);
-    double targetRPM = 3000;
+    double targetRPM = 4000;
     double targetRPS = targetRPM / 60.0;
 
     m_storageRoller.setControl(m_request.withVelocity(targetRPS));
@@ -113,7 +113,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
   }
 
-  //Extention reset
+//Extention reset
    public void extendReset() {
     m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));

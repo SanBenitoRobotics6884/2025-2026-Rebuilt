@@ -35,21 +35,9 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.5
-          }
-        },
-        {
           "type": "named",
           "data": {
-            "name": "stopIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopIntakeCommand"
+            "name": "runOuttakecommand"
           }
         },
         {
@@ -93,6 +81,12 @@
           "type": "named",
           "data": {
             "name": "stopRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIntakeCommand"
           }
         },
         {
