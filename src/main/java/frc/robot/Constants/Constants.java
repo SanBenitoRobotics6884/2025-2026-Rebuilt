@@ -1,7 +1,6 @@
 package frc.robot.Constants;
 
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.Unit;
 
 public class Constants {
   
@@ -46,13 +45,21 @@ public class Constants {
   }
 
   public class Vision {
+    // VISION CAMERA POSITION // RELATIVE TO ROBOT ORIGIN //
+    public static final double CAM_XPOSE = Units.inchesToMeters(11.25);
+    public static final double CAM_YPOSE = Units.inchesToMeters(5);
     public static final double CAM_HEIGHT = Units.inchesToMeters(8.5);
-    public static final double APRIL_TAG_HUB_HIEGHT = Units.inchesToMeters(44.25);
-
-    // FIDUCIAL IDS
+    // EULER ANGLES //
+    public static final double CAM_YAW = Units.degreesToRadians(0);
+    public static final double CAM_PITCH = Units.degreesToRadians(0);
+    public static final double CAM_ROLL = Units.degreesToRadians(0);
+    // HUB MEASUREMENTS //
+    public static final double HUB_APRIL_TAG_HEIGHT = Units.inchesToMeters(44.25);
+    public static final double HUB_CAM_PITCH = Units.degreesToRadians(0);
+    public static final double HUB_APRIL_TAG_PITCH = Units.degreesToRadians(0);
+    // HUB FIDUCIAL IDS
     public static final int RED_HUB_FIDUCIAL_L = 9;
     public static final int RED_HUB_FIDUCIAL_R = 10;
-
     public static final int BLUE_HUB_FIDUCIAL_L = 25;
     public static final int BLUE_HUB_FIDUCIAL_R = 26;
   }

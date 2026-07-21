@@ -4,58 +4,58 @@
 
 package frc.robot.subsystems.vision;
 
-import java.util.List;
+import static frc.robot.Constants.Constants.Vision.HUB_APRIL_TAG_HEIGHT;
+import static frc.robot.Constants.Constants.Vision.HUB_APRIL_TAG_PITCH;
+import static frc.robot.Constants.Constants.Vision.CAM_HEIGHT;
+import static frc.robot.Constants.Constants.Vision.CAM_PITCH;
+import static frc.robot.Constants.Constants.Vision.CAM_ROLL;
+import static frc.robot.Constants.Constants.Vision.CAM_XPOSE;
+import static frc.robot.Constants.Constants.Vision.CAM_YAW;
+import static frc.robot.Constants.Constants.Vision.CAM_YPOSE;
+import static frc.robot.Constants.Constants.Vision.HUB_CAM_PITCH;
+
 import java.util.Optional;
 
-import org.opencv.photo.Photo;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonUtils;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 
-import static frc.robot.Constants.Constants.Vision.*;
-
 public class VisionSusbsytem extends SubsystemBase {
-  PhotonCamera m_randomAssCamera = new PhotonCamera("HD_USB_CAMERA");
-  //PhotonCamera m_driverCamera = new PhotonCamera(getName());
+private final PhotonCamera m_camera = new PhotonCamera("HD_USB_CAMERA");
   //PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
-  AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-  Transform3d robotTocam = new Transform3d(new Translation3d(
-    Units.inchesToMeters(11.25), //These are rough estimates,
-    Units.inchesToMeters(5),     //we'll adjust them as we go if they prove to be inaccurate. 
-    Units.inchesToMeters(8.5)), new Rotation3d(0,0,0));
-  PhotonPoseEstimator m_poseEstimator = new PhotonPoseEstimator(layout, robotTocam);
-  Optional<Alliance> alliance = DriverStation.getAlliance();
-  boolean AprilTagSight = false;
+private AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+private final Transform3d robotTocam = new Transform3d(
+    new Translation3d(
+    CAM_XPOSE, 
+    CAM_YPOSE,     
+    CAM_HEIGHT), 
+    new Rotation3d(
+    CAM_ROLL,
+    CAM_PITCH,
+    CAM_YAW));
 
-  double targetYaw;
-  double targetPitch;
-  double targetSkew;
-  double targetArea;
-  double targetDistance;
-  
+private final PhotonPoseEstimator m_photonPoseEstimator = new PhotonPoseEstimator(layout, robotTocam);
+private final Optional<Alliance> alliance = DriverStation.getAlliance();
 
-  private CommandSwerveDrivetrain m_drivetrain;
+private double targetYaw;
+private double targetPitch;
+private double targetSkew;
+private double targetArea;
+private double targetDistance;
+
+private CommandSwerveDrivetrain m_drivetrain;
 
   public VisionSusbsytem(CommandSwerveDrivetrain drivetrain) {
     m_drivetrain = drivetrain;
@@ -63,87 +63,86 @@ public class VisionSusbsytem extends SubsystemBase {
 
   @Override
   public void periodic() {
-  var results = m_randomAssCamera.getAllUnreadResults();
-
-  SmartDashboard.putNumber("Camera Results Count", results.size());
-  for(var result : results){
-    Optional<EstimatedRobotPose> pose = m_poseEstimator.update(result);
-
-     SmartDashboard.putBoolean("Has Valid Pose", pose.isPresent());
-
-    if(pose.isPresent()){
-      Pose2d robotPose = new Pose2d(
+  var results = m_camera.getAllUnreadResults(); // Obtains all the April Tag results into a list.
+  if (!results.isEmpty()) {
+    for (var result : results) {
+      var bestTarget = result.getBestTarget(); // bestTarget
+      // needs Multitag to be enabled on the photon dashboard first, make sure this is true pretty pls
+      Optional<EstimatedRobotPose> pose = m_photonPoseEstimator.estimateCoprocMultiTagPose(result);
+      if(pose.isPresent()) {
+        Pose2d robotPose = new Pose2d(
         pose.get().estimatedPose.getX(),
         pose.get().estimatedPose.getY(),
         pose.get().estimatedPose.getRotation().toRotation2d()
-    );
+        );
+        // Corrects odometry pose estimate using vision measurement.
+        m_drivetrain.addVisionMeasurement(
+          robotPose, 
+          pose.get().timestampSeconds
+        );  
+      }
 
-    SmartDashboard.putNumber("Vision Pose X", robotPose.getX());
-    SmartDashboard.putNumber("Vision Pose Y", robotPose.getY());
-    SmartDashboard.putNumber("Vision Pose Angle", robotPose.getRotation().getDegrees());
-
-    // Corrects odometry pose estimate using vision measurement.
-    m_drivetrain.addVisionMeasurement(
-                robotPose, 
-                pose.get().timestampSeconds
-    );
-  }
-
-  // If target is found in the pipeline, then the resulting code should get the data of the BEST target
-  if(result.hasTargets()){
-      var bestTarget = result.getBestTarget();
-
-      if (alliance.isPresent()) {
-        if(alliance.get() == Alliance.Red) {
-           for (PhotonTrackedTarget target : result.getTargets()) {
-              if (target.getFiducialId() == 9) {
-                getHubTargetDistance();  
-              }
-          }
-
-        } else if (alliance.get() == Alliance.Blue) {
-          for (PhotonTrackedTarget target : result.getTargets()) {
-              if (target.getFiducialId() == 25) {
-                getHubTargetDistance();
-              }
-          }
-
-        }
-      };
-
-      AprilTagSight = true;
       targetYaw = bestTarget.getYaw();           // Horizontal angle to target
       targetPitch = bestTarget.getPitch();       // Vertical angle to target
       targetSkew = bestTarget.getSkew();         // Rotation angle of target
       targetArea = bestTarget.getArea();         // Size of target in view (0-100)
-      
-      SmartDashboard.putNumber("Distance to Target (m)", targetDistance);
-    } else {
-      AprilTagSight = false;
     }
   }
 
-    SmartDashboard.putBoolean("April Tag", AprilTagSight);
+  /* Smart Dashboard Stuff */
     SmartDashboard.putNumber("Yaw:", targetYaw);
     SmartDashboard.putNumber("Pitch", targetPitch);
     SmartDashboard.putNumber("Skew", targetSkew);
     SmartDashboard.putNumber("Area:", targetArea);
-  }
+}
 
   // Obtaining distance to april tags on hubs.
   public double getHubTargetDistance() {
-    targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
-                  CAM_HEIGHT,
-                  APRIL_TAG_HUB_HIEGHT,
-                  0,
-                  0
-                );
-    return targetDistance;
-    }
+      return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
+        CAM_HEIGHT, 
+        HUB_APRIL_TAG_HEIGHT, 
+        HUB_CAM_PITCH, 
+        HUB_APRIL_TAG_PITCH);
+  }
 
+  /** Camera snapshots both input and output. */
   public void camSnapshot() {
-    m_randomAssCamera.takeInputSnapshot();
-    m_randomAssCamera.takeOutputSnapshot();
+    m_camera.takeInputSnapshot();
+    m_camera.takeOutputSnapshot();
+  }
+
+  /**
+   * Returns specific bestTarget data depending on the integer in the paramter.
+   * Cases: 1 ->  targetYaw, 2 -> targetPitch, 3 -> targetSkew, 4 -> targetArea, 5 -> targetDistance
+   * @return
+   * Data from bestTarget
+   */
+  public double bestTargetReturn(int targetData) {
+    switch (targetData) {
+      case 1:
+        return targetYaw;
+      case 2:
+        return targetPitch;
+      case 3:
+        return targetSkew;
+      case 4:
+        return targetArea;
+      case 5:
+        return targetDistance;
+      default:
+        return targetDistance;
+    }
+    
+  }
+  //*Align the bot to the hub*/
+  public void robotAlign() {
+    if (alliance.get().equals(Alliance.Red)) {
+    
+    } else if (alliance.get().equals(Alliance.Blue)) {
+
+    } else {
+
+    }
   }
 }
 
