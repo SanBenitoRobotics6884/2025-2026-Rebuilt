@@ -7,24 +7,29 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.Constants.Constants.Container.*;
 
+import java.io.IOException;
+
+import org.json.simple.parser.ParseException;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FileVersionException;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.trajectory.ExponentialProfile.Constraints;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -32,9 +37,6 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 
 public class RobotContainer {
-
-    private final Field2d m_field = new Field2d();
-
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed = SLOW_SWERVE_SPEED; // Reduce speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -71,13 +73,35 @@ public class RobotContainer {
 
     drivetrain.DriveSubsystem();
     if (AutoBuilder.isConfigured()) {
-        System.out.print("it is configured");
+        System.out.print("AutoBuilder is configured");
     }
         //config
      // For convenience a programmer could change this when going to competition.
      autoChooser = AutoBuilder.buildAutoChooser();
      SmartDashboard.putData("Auto Chooser", autoChooser);
 
+     PathPlannerPath m_alignToHub;
+    try {
+        m_alignToHub = PathPlannerPath.fromPathFile("From Collecting in Mid to Right start");
+    } catch (FileVersionException | IOException | ParseException e) {
+        e.printStackTrace();
+    }
+    // In meters per second.
+    PathConstraints m_pathConstraints = new PathConstraints(
+            null, null, null, null);
+    Command pathfindHubAlign = AutoBuilder.pathfindThenFollowPath(null, m_pathConstraints);
+
+    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Middle start shoot then climb", autoChooser);
+    // SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
+    // SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
+    // SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
+    // SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
         configureBindings();
 
     }
