@@ -48,6 +48,12 @@ public class Constants {
     public static final int D_PAD_DOWN = 90;
     public static final int D_PAD_RIGHT = 180;
     public static final int D_PAD_UP = 270;
+
+    // The units are meters for non-angular, whereas angular are in radians. :p
+    public static final double MAX_VELOCITY = 0;
+    public static final double MAX_ACCELERATION = 0;
+    public static final double MAX_ANGULAR_VELOCITY = 0;
+    public static final double MAX_ANGULAR_ACCELERATION = 0;
   }
 
   public class Vision {

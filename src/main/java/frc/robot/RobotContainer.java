@@ -55,6 +55,10 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
+
+    // Physical constraints on the robot for the algorithim to be more accurate.
+    public PathConstraints m_pathConstraints = new PathConstraints(
+            MAX_VELOCITY, MAX_ACCELERATION, MAX_ANGULAR_VELOCITY, MAX_ANGULAR_ACCELERATION);
     
     public RobotContainer() {
         
@@ -74,34 +78,16 @@ public class RobotContainer {
     drivetrain.DriveSubsystem();
     if (AutoBuilder.isConfigured()) {
         System.out.print("AutoBuilder is configured");
+        try {
+        PathPlannerPath m_align = PathPlannerPath.fromPathFile(null);
+        Command pathfindHubAlign = AutoBuilder.pathfindThenFollowPath(m_align, m_pathConstraints);
+        } catch (FileVersionException | IOException | ParseException e) {
+        e.printStackTrace();
+        }
     }
-        //config
-     // For convenience a programmer could change this when going to competition.
      autoChooser = AutoBuilder.buildAutoChooser();
      SmartDashboard.putData("Auto Chooser", autoChooser);
-
-     PathPlannerPath m_alignToHub;
-    try {
-        m_alignToHub = PathPlannerPath.fromPathFile("From Collecting in Mid to Right start");
-    } catch (FileVersionException | IOException | ParseException e) {
-        e.printStackTrace();
-    }
     // In meters per second.
-    PathConstraints m_pathConstraints = new PathConstraints(
-            null, null, null, null);
-    Command pathfindHubAlign = AutoBuilder.pathfindThenFollowPath(null, m_pathConstraints);
-
-    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting then climb", autoChooser);
-    // SmartDashboard.putData("middle start to left start to midfield to right collecting then shooting", autoChooser);
-    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting then climb", autoChooser);
-    // SmartDashboard.putData("Middle start to right start to midfield to left collecting then shooting", autoChooser);
-    // SmartDashboard.putData("Middle start shoot then climb", autoChooser);
-    // SmartDashboard.putData("Left start to midfield to right collecting then shooting then climb", autoChooser);
-    // SmartDashboard.putData("Left start to midfield to right collecting then shooting", autoChooser);
-    // SmartDashboard.putData("Left to middle of alliance field shoot then climb", autoChooser);
-    // SmartDashboard.putData("Right start to midfield to left collecting then shooting then climb", autoChooser);
-    // SmartDashboard.putData("Right start to midfield to left collecting then shooting", autoChooser);
-    // SmartDashboard.putData("Right start to midle shoot then climb", autoChooser);
         configureBindings();
 
     }
