@@ -77,7 +77,6 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    System.out.println("test");
     double lposition = m_leftLinearScrew.getPosition(true).getValueAsDouble();
     double rposition = m_rightLinearScrew.getPosition(true).getValueAsDouble();
     // System.out.println(lposition);

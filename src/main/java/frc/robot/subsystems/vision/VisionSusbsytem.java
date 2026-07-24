@@ -59,11 +59,8 @@ private CommandSwerveDrivetrain m_drivetrain;
 
   @Override
   public void periodic() {
-    if (m_camera.isConnected()) {
-      System.out.println("Is Connected");
-    }
-
-  var results = m_camera.getAllUnreadResults(); // Obtains all the April Tag results into a list.
+  
+   var results = m_camera.getAllUnreadResults(); // Obtains all the April Tag results into a list.
   if (!results.isEmpty()) {
     System.out.println("Results are not empty");
     for (var result : results) {
