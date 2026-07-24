@@ -15,12 +15,12 @@ public class Constants {
     public static final double TAKE_SPEED = -0.250;
     public static final double STORAGEROLLER_SPEED = 0.15;
 
-    /* Lowkey, just switch the rotation direciton (negative to pos)
-     if robot was zeroed while the intake was out.
+    /* If zeroed intake in -> 5, -73
+      If zeroed intake out -> -5, 73
      */
 
-    public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
-    public static double OUT_TAKE_TARGET_ROTATIONS = -73.0;
+    public static double IN_TAKE_TARGET_ROTATIONS = -5.0;
+    public static double OUT_TAKE_TARGET_ROTATIONS = 73.0;
     public static final double LIMIT_SWITCH_ROTATIONS = 1.0;
   }
 
@@ -68,7 +68,6 @@ public class Constants {
     // HUB MEASUREMENTS //
     public static final double HUB_APRIL_TAG_HEIGHT = Units.inchesToMeters(44.25);
     public static final double HUB_CAM_PITCH = Units.degreesToRadians(0);
-    public static final double HUB_APRIL_TAG_PITCH = Units.degreesToRadians(0);
     // HUB FIDUCIAL IDS
     public static final int RED_HUB_FIDUCIAL_L = 9;
     public static final int RED_HUB_FIDUCIAL_R = 10;

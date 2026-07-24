@@ -5,15 +5,12 @@
 package frc.robot.subsystems.vision;
 
 import static frc.robot.Constants.Constants.Vision.HUB_APRIL_TAG_HEIGHT;
-import static frc.robot.Constants.Constants.Vision.HUB_APRIL_TAG_PITCH;
 import static frc.robot.Constants.Constants.Vision.CAM_HEIGHT;
 import static frc.robot.Constants.Constants.Vision.CAM_PITCH;
 import static frc.robot.Constants.Constants.Vision.CAM_ROLL;
 import static frc.robot.Constants.Constants.Vision.CAM_XPOSE;
 import static frc.robot.Constants.Constants.Vision.CAM_YAW;
 import static frc.robot.Constants.Constants.Vision.CAM_YPOSE;
-import static frc.robot.Constants.Constants.Vision.HUB_CAM_PITCH;
-
 import java.util.Optional;
 
 import org.photonvision.EstimatedRobotPose;
@@ -33,8 +30,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 
 public class VisionSusbsytem extends SubsystemBase {
-private final PhotonCamera m_camera = new PhotonCamera("HD_USB_CAMERA");
-  //PhotonTrackedTarget bestTarget = unreadResults.get(0).getBestTarget();
+private final PhotonCamera m_camera = new PhotonCamera("Julio");
 private AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 private final Transform3d robotTocam = new Transform3d(
     new Translation3d(
@@ -53,7 +49,7 @@ private double targetYaw;
 private double targetPitch;
 private double targetSkew;
 private double targetArea;
-private double targetDistance;
+public double targetDistance;
 
 private CommandSwerveDrivetrain m_drivetrain;
 
@@ -63,17 +59,24 @@ private CommandSwerveDrivetrain m_drivetrain;
 
   @Override
   public void periodic() {
+    if (m_camera.isConnected()) {
+      System.out.println("Is Connected");
+    }
+
   var results = m_camera.getAllUnreadResults(); // Obtains all the April Tag results into a list.
   if (!results.isEmpty()) {
+    System.out.println("Results are not empty");
     for (var result : results) {
       var bestTarget = result.getBestTarget(); // bestTarget
-      // needs Multitag to be enabled on the photon dashboard first, make sure this is true pretty pls
-      Optional<EstimatedRobotPose> pose = m_photonPoseEstimator.estimateCoprocMultiTagPose(result);
-      if(pose.isPresent()) {
-        Pose2d robotPose = new Pose2d(
-        pose.get().estimatedPose.getX(),
-        pose.get().estimatedPose.getY(),
-        pose.get().estimatedPose.getRotation().toRotation2d()
+      var getMultiTag = result.getMultiTagResult();
+      if (getMultiTag.isPresent()) {
+         // needs Multitag to be enabled on the photon dashboard first, make sure this is true pretty pls
+        Optional<EstimatedRobotPose> pose = m_photonPoseEstimator.estimateCoprocMultiTagPose(result);
+        if(pose.isPresent()) {
+          Pose2d robotPose = new Pose2d(
+            pose.get().estimatedPose.getX(),
+            pose.get().estimatedPose.getY(),
+            pose.get().estimatedPose.getRotation().toRotation2d()
         );
         // Corrects odometry pose estimate using vision measurement.
         m_drivetrain.addVisionMeasurement(
@@ -81,12 +84,17 @@ private CommandSwerveDrivetrain m_drivetrain;
           pose.get().timestampSeconds
         );  
       }
-
-      targetYaw = bestTarget.getYaw();           // Horizontal angle to target
-      targetPitch = bestTarget.getPitch();       // Vertical angle to target
-      targetSkew = bestTarget.getSkew();         // Rotation angle of target
-      targetArea = bestTarget.getArea();         // Size of target in view (0-100)
     }
+
+      targetYaw = bestTarget.getYaw(); // Horizontal angle to target
+      targetPitch = bestTarget.getPitch(); // Vertical angle to target
+      targetSkew = bestTarget.getSkew(); // Rotation angle of target
+      targetArea = bestTarget.getArea(); // Size of target in view (0-100)
+
+      targetDistance = getHubTargetDistance(targetPitch); // returns target distance from the best target camera sees.
+      System.out.println(targetDistance);
+    }
+
   }
 
   /* Smart Dashboard Stuff */
@@ -97,12 +105,12 @@ private CommandSwerveDrivetrain m_drivetrain;
 }
 
   // Obtaining distance to april tags on hubs.
-  public double getHubTargetDistance() {
+  public double getHubTargetDistance(double tagPitch) {
       return targetDistance = PhotonUtils.calculateDistanceToTargetMeters(
         CAM_HEIGHT, 
         HUB_APRIL_TAG_HEIGHT, 
-        HUB_CAM_PITCH, 
-        HUB_APRIL_TAG_PITCH);
+        CAM_PITCH, 
+        tagPitch);
         // Not done yet, but instead, just grab all the data from the current id obtained, it's easier if possible.
         // If necessary, just grab the data from specific targets if necessary.
   }
@@ -136,5 +144,13 @@ private CommandSwerveDrivetrain m_drivetrain;
     }
     
   }
+
+  /*public void allianceCheck(Optional<Alliance> alliance) {
+    if (alliance.get() == Alliance.Red) {
+      getHubTargetDistance();
+    } else {
+
+    }
+  }*/
 }
 

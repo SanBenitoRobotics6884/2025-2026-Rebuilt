@@ -76,14 +76,16 @@ public class RobotContainer {
     NamedCommands.registerCommand("stopOuttakeCommand", m_OuttakeSubsystem.stopOuttakeCommand());
 
     drivetrain.DriveSubsystem();
+    
     if (AutoBuilder.isConfigured()) {
         System.out.print("AutoBuilder is configured");
+        /*
         try {
         PathPlannerPath m_align = PathPlannerPath.fromPathFile(null);
         Command pathfindHubAlign = AutoBuilder.pathfindThenFollowPath(m_align, m_pathConstraints);
         } catch (FileVersionException | IOException | ParseException e) {
         e.printStackTrace();
-        }
+        }*/
     }
      autoChooser = AutoBuilder.buildAutoChooser();
      SmartDashboard.putData("Auto Chooser", autoChooser);

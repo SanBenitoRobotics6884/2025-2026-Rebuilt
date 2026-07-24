@@ -20,13 +20,11 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
     Optional<Alliance> alliance;
-    UsbCamera m_driverCam;
 
     @Override
     public void robotInit() {
         // Start the camera server with default settings
         //CameraServer.addCamera(VideoSource.Kind.kUsb);
-        m_driverCam = CameraServer.startAutomaticCapture();
     }
 
     private Command m_autonomousCommand;
@@ -45,10 +43,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
-        
-        if(m_driverCam.isEnabled()) {
-            SmartDashboard.putBoolean("Driver Cam Connection:", m_driverCam.isConnected());
-        }
+
     }
 
     @Override
