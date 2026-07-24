@@ -35,6 +35,7 @@ import frc.robot.Constants.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
+import frc.robot.subsystems.vision.VisionSusbsytem;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -55,6 +56,7 @@ public class RobotContainer {
     private final SendableChooser<Command> autoChooser;
     public IntakeSubsystem m_IntakeSubsystem = new IntakeSubsystem();
     public OuttakeSubsystem m_OuttakeSubsystem = new OuttakeSubsystem();
+    public VisionSusbsytem m_visionSubsystem = new VisionSusbsytem(drivetrain);
 
     // Physical constraints on the robot for the algorithim to be more accurate.
     public PathConstraints m_pathConstraints = new PathConstraints(
