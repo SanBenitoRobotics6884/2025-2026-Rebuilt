@@ -10,6 +10,7 @@ import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
@@ -32,8 +33,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.generated.TunerConstants;
-import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.Constants.TunerConstants.TunerSwerveDrivetrain;
 
 
 
@@ -45,14 +45,7 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-    private static final double kSimLoopPeriod = 0.004; // 4 ms
-    private Notifier m_simNotifier = null;
-    private double m_lastSimTime;
-
-    
-
-    
-  // PathPlanner will hand us ROBOT-relative ChassisSpeeds. CTRE has a native request for that.
+     // PathPlanner will hand us ROBOT-relative ChassisSpeeds. CTRE has a native request for that.
   private final SwerveRequest.ApplyRobotSpeeds ppRobotSpeeds =
       new SwerveRequest.ApplyRobotSpeeds()
           .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
@@ -78,10 +71,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         this::getPose,
         this::resetPose,
         this::getRobotRelativeSpeeds,
-        (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
+        // (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
+        (speeds, feedforwards) -> this.setControl(
+            new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds)
+            .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+            .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+            .withDriveRequestType(com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType.Velocity)
+            
+        ),
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), // translation
-            new PIDConstants(5.0, 0.0, 0.0)  // rotation
+            new PIDConstants(2.0, 0.0, 0.0)  // rotation
         ),
         config,
         () -> DriverStation.getAlliance().isPresent()
@@ -111,7 +111,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     this.setControl(ppRobotSpeeds.withSpeeds(speeds));
   }
 
-  
+
+    private static final double kSimLoopPeriod = 0.004; // 4 ms
+    private Notifier m_simNotifier = null;
+    private double m_lastSimTime;
+
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
@@ -374,4 +378,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
     }
+
+    
 }

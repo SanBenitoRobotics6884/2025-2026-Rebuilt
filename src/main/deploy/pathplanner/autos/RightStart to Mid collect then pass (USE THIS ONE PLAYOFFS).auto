@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right start to right midfield"
+            "pathName": "LeftStart to Mid Ready to collect"
           }
         },
         {
@@ -17,9 +17,21 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
           "type": "named",
           "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopStorageCommand"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "LeftMid collect to pass"
           }
         },
         {
@@ -29,45 +41,45 @@
           }
         },
         {
-          "type": "path",
+          "type": "wait",
           "data": {
-            "pathName": "Right of midfield to left"
+            "waitTime": 1.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "stopTakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "undeployIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopIntakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Left of midfield to middle left start"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left start to middle facing hub"
+            "pathName": "From MidLeft Collect over hump to shoot"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "runOuttakecommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
           }
         },
         {
@@ -83,39 +95,15 @@
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Middle to climb base"
+            "name": "stopIndexCommand"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "climbUpCommand"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "climbDownCommand"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopClimbCommand"
+            "name": "stopRollersCommand"
           }
         }
       ]

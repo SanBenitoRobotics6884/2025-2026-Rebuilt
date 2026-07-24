@@ -48,7 +48,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.setControl(new Follower(m_leftLinearScrew.getDeviceID(), MotorAlignmentValue.Aligned));
     final VelocityVoltage m_request = new VelocityVoltage(0);
-    double targetRPM = 3000;
+    double targetRPM = 4000;
     double targetRPS = targetRPM / 60.0;
 
     m_storageRoller.setControl(m_request.withVelocity(targetRPS));
@@ -113,6 +113,12 @@ public class IntakeSubsystem extends SubsystemBase {
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
   }
 
+//Extention reset
+   public void extendReset() {
+    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+  }
+
 //Normal Runs
   public void runIntake() { 
     m_intakeRoller.set(TAKE_SPEED);
@@ -138,31 +144,64 @@ public class IntakeSubsystem extends SubsystemBase {
     m_intakeRoller.set(0);
     m_storageRoller.set(0);
   }
+  public void stopRollers(){
+    m_storageRoller.set(0);
+  }
 
   //COMMANDS
-
-//Extension Commands
-  public Command extendIntakeCommand() {
-    return run(this::extendIntake);
+// Extension Commands Auto
+public Command extendIntakeCommand() {
+    return runOnce(this::retractIntake);
   }
   public Command retractIntakeCommand() {
-    return run(this::retractIntake);
+    return runOnce(this::retractIntake);
   }
   public Command littleExtendIntakeCommand() {
-    return run(this::littleExtenedIntake);
+    return runOnce(this::littleExtenedIntake);
+  }
+  //Extention Reset Command
+    public Command extendresetCommand() {
+    return run(this::extendReset);
   }
 
-//Normal Run Commands
-  public Command runIntakeCommand() {
-    return run(this::runIntake);
+//Extension Commands
+  public Command extendIntakeTeleCommand() {
+    return run(this::extendIntake);
+  }
+  public Command retractIntakeTeleCommand() {
+    return run(this::retractIntake);
+  }
+  public Command littleExtendIntakeTeleCommand() {
+    return run(this::littleExtenedIntake);
+  }
+  //Extention Reset Command
+  public Command extendresetTeleCommand() {
+    return run(this::extendReset);
+  }
+// Normal Run Auto Commands
+public Command runIntakeCommand() {
+    return runOnce(this::runIntake);
   }
   public Command runIntakeBackCommand(){
-    return run(this::runIntakeBack);
+    return runOnce(this::runIntakeBack);
   }
   public Command runStorgeRollersCommand(){
-    return run(this::runStorageRoller);
+    return runOnce(this::runStorageRoller);
   }
   public Command runStorgeRollersBackCommand(){
+    return runOnce(this::runStorageRollerBack);
+  }
+//Normal Run Commands
+  public Command runIntaketeleCommand() {
+    return run(this::runIntake);
+  }
+  public Command runIntakeBackteleCommand(){
+    return run(this::runIntakeBack);
+  }
+  public Command runStorgeRollersteleCommand(){
+    return run(this::runStorageRoller);
+  }
+  public Command runStorgeRollersBackteleCommand(){
     return run(this::runStorageRollerBack);
   }
 
@@ -172,5 +211,8 @@ public class IntakeSubsystem extends SubsystemBase {
   }
   public Command stopIntakeCommand() {
     return runOnce(this::stopIntake);
+  }
+  public Command stopRollerCommand() {
+    return runOnce(this::stopRollers);
   }
 }

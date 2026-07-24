@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 8.130296208525431,
-        "y": 7.323412322274882
+        "x": 7.802266666666666,
+        "y": 6.8219111111111115
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.130296208530806,
-        "y": 6.8505687203791465
+        "x": 7.802266666666666,
+        "y": 6.149100840069742
       },
       "isLocked": false,
-      "linkedName": "Left of MIddle field"
+      "linkedName": "MidRight ready to collect"
     },
     {
       "anchor": {
-        "x": 8.130296208525431,
-        "y": 0.8110663507108984
+        "x": 7.061688888888889,
+        "y": 4.424777777777778
       },
       "prevControl": {
-        "x": 8.130296208530806,
-        "y": 1.230177725118482
+        "x": 7.850988888888889,
+        "y": 6.1495444444444445
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Right of midfield"
+      "linkedName": "MidRight pass to teamside"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.5822222222222204,
+      "rotationDegrees": -90.60550575449727
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -42,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -90.76389846054786
+    "rotation": 178.8766972859246
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -88.91907581279871
+    "rotation": -90.34068570227201
   },
   "useDefaultConstraints": true
 }

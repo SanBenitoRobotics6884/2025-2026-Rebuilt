@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left start to middle left of midfield"
+            "pathName": "middle start to shoot"
           }
         },
         {
@@ -17,57 +17,21 @@
           }
         },
         {
-          "type": "named",
+          "type": "wait",
           "data": {
-            "name": "stopInOutTakeCommand"
+            "waitTime": 1.0
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 0.5
+            "name": "stopStorageCommand"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "runIntakeCommand"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left of midfield to right"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopTakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "undeployIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right of midfield back to middle of alliance field"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right start to middle facing hub"
           }
         },
         {
@@ -79,7 +43,50 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIntakeCommand"
           }
         },
         {

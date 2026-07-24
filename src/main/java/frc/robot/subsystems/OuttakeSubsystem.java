@@ -16,11 +16,12 @@ import static frc.robot.Constants.Constants.Outtake.*;
 
 public class OuttakeSubsystem extends SubsystemBase {
   TalonFX m_outtakeMotor;
+  
   TalonFX m_indexMotor;
   DutyCycleOut speed;
 
   final VelocityVoltage m_request = new VelocityVoltage(0);
-  double targetRPM = 4000;
+  double targetRPM = 3500;//4000;
   double targetRPS = targetRPM / 60.0;
 
   /** Creates a new OuttakeSubsystem. */
@@ -43,9 +44,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
   }
-
-  //MOTOR USES
-
+/*
+ * MOTOR USES
+ */
 //Normal Run
   public void runOuttake() {
     m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS));
@@ -70,20 +71,33 @@ public class OuttakeSubsystem extends SubsystemBase {
   public void stopIndex(){
      m_indexMotor.set(0);
   }
-
-  //COMMANDS
-
-//Run Commands
-  public Command runOuttakecommand() {
-    return run(this::runOuttake);
+/*
+ * COMMANDS
+ */
+// Run Auto Commands
+ public Command runOuttakecommand() {
+    return runOnce(this::runOuttake);
   }
     public Command runOuttakeSlowCommand() {
-    return run(this::runOuttakeSlow);
+    return runOnce(this::runOuttakeSlow);
   }
     public Command runIndexCommand() {
-      return run(this::runIndex);
+      return runOnce(this::runIndex);
     }
     public Command runReverseIndexCommand() {
+    return runOnce(this::reverseIndex);
+  }
+//Run Commands
+  public Command runOuttaketelecommand() {
+    return run(this::runOuttake);
+  }
+    public Command runOuttakeSlowteleCommand() {
+    return run(this::runOuttakeSlow);
+  }
+    public Command runIndexteleCommand() {
+      return run(this::runIndex);
+    }
+    public Command runReverseIndexteleCommand() {
     return run(this::reverseIndex);
   }
 
