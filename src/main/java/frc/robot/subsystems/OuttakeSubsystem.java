@@ -15,7 +15,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.Constants.Outtake.*;
 
 public class OuttakeSubsystem extends SubsystemBase {
-  TalonFX m_outtakeMotor;
+  TalonFX m_outtakeMotorOne;
+  TalonFX m_OuttskeMotorTwo;
   
   TalonFX m_indexMotor;
   DutyCycleOut speed;
@@ -27,7 +28,8 @@ public class OuttakeSubsystem extends SubsystemBase {
   /** Creates a new OuttakeSubsystem. */
 
   public OuttakeSubsystem() {
-    m_outtakeMotor = new TalonFX(60);
+    m_outtakeMotorOne = new TalonFX(60);
+    m_OuttskeMotorTwo = new TalonFX(67); //will add proper motor in a bit
     m_indexMotor = new TalonFX(50);
   
   //RPM
@@ -36,7 +38,8 @@ public class OuttakeSubsystem extends SubsystemBase {
     // slot0Configs.kI = PID_I_VALUE;
     // slot0Configs.kD = PID_D_VALUE;
     // Add kI, kD, kS, kV if needed for better control
-    m_outtakeMotor.getConfigurator().apply(slot0Configs);
+    m_outtakeMotorOne.getConfigurator().apply(slot0Configs);
+    m_OuttskeMotorTwo.getConfigurator().apply(slot0Configs);
     m_indexMotor.getConfigurator().apply(slot0Configs);
   }
 
@@ -49,7 +52,8 @@ public class OuttakeSubsystem extends SubsystemBase {
  */
 //Normal Run
   public void runOuttake() {
-    m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS));
+    m_outtakeMotorOne.setControl(m_request.withVelocity(-targetRPS));
+    m_OuttskeMotorTwo.setControl(m_request.withVelocity(targetRPM));
   }
   public void runIndex(){
     m_indexMotor.setControl(m_request.withVelocity(targetRPS));
@@ -60,13 +64,15 @@ public class OuttakeSubsystem extends SubsystemBase {
 
 //Slow Mode
   public void runOuttakeSlow() {
-    m_outtakeMotor.setControl(m_request.withVelocity(-targetRPS * OUTTAKE_SPEED_SLOW));
+    m_outtakeMotorOne.setControl(m_request.withVelocity(-targetRPS * OUTTAKE_SPEED_SLOW));
+    m_OuttskeMotorTwo.setControl(m_request.withVelocity(targetRPS * OUTTAKE_SPEED_SLOW));
     m_indexMotor.setControl(m_request.withVelocity(targetRPS * INDEX_SPEED_SLOW));
   }
 
 //Stops
   public void stopOuttake() {
-    m_outtakeMotor.set(0);
+    m_outtakeMotorOne.set(0);
+    m_OuttskeMotorTwo.set(0);
   }
   public void stopIndex(){
      m_indexMotor.set(0);
