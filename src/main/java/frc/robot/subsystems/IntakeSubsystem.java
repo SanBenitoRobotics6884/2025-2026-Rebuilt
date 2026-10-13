@@ -32,6 +32,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private DigitalInput i_limitSwitch = new DigitalInput(0);
   private final Timer simTimer = new Timer();
 
+  final VelocityVoltage m_request = new VelocityVoltage(0);
+  double targetRPM = 3000;
+  double targetRPS = targetRPM / 60.0;
+  final VelocityVoltage m_quest = new VelocityVoltage(0);
+  double targetRPMTwo = 1000;
+  double targetRPSTwo = targetRPM / 60.0;
+
   /** Creates a new Intake. */
   public IntakeSubsystem() {
     m_leftLinearScrew = new TalonFX(20);
@@ -47,11 +54,7 @@ public class IntakeSubsystem extends SubsystemBase {
     m_leftLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.getConfigurator().apply(slot0Configs);
     m_rightLinearScrew.setControl(new Follower(m_leftLinearScrew.getDeviceID(), MotorAlignmentValue.Aligned));
-    final VelocityVoltage m_request = new VelocityVoltage(0);
-    double targetRPM = 4000;
-    double targetRPS = targetRPM / 60.0;
 
-    m_storageRoller.setControl(m_request.withVelocity(targetRPS));
 
     if (RobotBase.isSimulation()) {
             simTimer.start();
@@ -91,11 +94,11 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Intake Extension
   public void extendIntake() {
-    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
+    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
     m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
   public void retractIntake() {
-      m_leftLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+      m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-OUT_TAKE_TARGET_ROTATIONS));
       m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
   }
   public void littleExtenedIntake() {
@@ -121,16 +124,16 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Normal Runs
   public void runIntake() { 
-    m_intakeRoller.set(TAKE_SPEED);
+    m_intakeRoller.setControl(m_request.withVelocity(-targetRPS));
   }
   public void runIntakeBack(){
-    m_intakeRoller.set(-TAKE_SPEED);
+    m_intakeRoller.setControl(m_request.withVelocity(targetRPS));
   }
   public void runStorageRoller(){
-    m_storageRoller.set(STORAGEROLLER_SPEED);
+    m_storageRoller.setControl(m_quest.withVelocity(targetRPSTwo));
   }
   public void runStorageRollerBack(){
-    m_storageRoller.set(-STORAGEROLLER_SPEED);
+    m_storageRoller.setControl(m_quest.withVelocity(targetRPSTwo));
   }
 
 //Stops

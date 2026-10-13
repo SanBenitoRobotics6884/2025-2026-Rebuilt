@@ -6,6 +6,8 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -15,31 +17,36 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import static frc.robot.Constants.Constants.Outtake.*;
 
 public class OuttakeSubsystem extends SubsystemBase {
-  TalonFX m_outtakeMotorOne;
-  TalonFX m_OuttskeMotorTwo;
+  TalonFX m_alyssaMotor;
+  TalonFX m_nathanMotor;
   
   TalonFX m_indexMotor;
   DutyCycleOut speed;
 
-  final VelocityVoltage m_request = new VelocityVoltage(0);
-  double targetRPM = 3500;//4000;
+  final VelocityVoltage m_request = new VelocityVoltage(1);
+  final VelocityVoltage m_quest = new VelocityVoltage(0);
+  double targetRPM = 2000;//4000;
   double targetRPS = targetRPM / 60.0;
 
   /** Creates a new OuttakeSubsystem. */
 
   public OuttakeSubsystem() {
-    m_outtakeMotorOne = new TalonFX(60);
-    m_OuttskeMotorTwo = new TalonFX(67); //will add proper motor in a bit
+    m_alyssaMotor = new TalonFX(34);
+    m_nathanMotor = new TalonFX(62);
     m_indexMotor = new TalonFX(50);
   
   //RPM
     var slot0Configs = new Slot0Configs();
-    slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
+    var slot1Configs = new Slot0Configs();
+    var slot2Configs = new Slot0Configs();
+    slot0Configs.kP = PID_P_VALUE; 
+    slot1Configs.kP = PID_P_VALUE;
+    slot2Configs.kP = PID_P_VALUE;// Tune this value (output per rotation of error)
     // slot0Configs.kI = PID_I_VALUE;
     // slot0Configs.kD = PID_D_VALUE;
     // Add kI, kD, kS, kV if needed for better control
-    m_outtakeMotorOne.getConfigurator().apply(slot0Configs);
-    m_OuttskeMotorTwo.getConfigurator().apply(slot0Configs);
+    m_alyssaMotor.getConfigurator().apply(slot1Configs);
+    m_nathanMotor.getConfigurator().apply(slot2Configs);
     m_indexMotor.getConfigurator().apply(slot0Configs);
   }
 
@@ -52,8 +59,8 @@ public class OuttakeSubsystem extends SubsystemBase {
  */
 //Normal Run
   public void runOuttake() {
-    m_outtakeMotorOne.setControl(m_request.withVelocity(-targetRPS));
-    m_OuttskeMotorTwo.setControl(m_request.withVelocity(targetRPM));
+    m_alyssaMotor.setControl(m_request.withVelocity(targetRPS));
+    m_nathanMotor.setControl(new StrictFollower(32));
   }
   public void runIndex(){
     m_indexMotor.setControl(m_request.withVelocity(targetRPS));
@@ -64,15 +71,15 @@ public class OuttakeSubsystem extends SubsystemBase {
 
 //Slow Mode
   public void runOuttakeSlow() {
-    m_outtakeMotorOne.setControl(m_request.withVelocity(-targetRPS * OUTTAKE_SPEED_SLOW));
-    m_OuttskeMotorTwo.setControl(m_request.withVelocity(targetRPS * OUTTAKE_SPEED_SLOW));
+    m_alyssaMotor.setControl(m_request.withVelocity(targetRPS * OUTTAKE_SPEED_SLOW));
+    m_nathanMotor.setControl(new StrictFollower(32));
     m_indexMotor.setControl(m_request.withVelocity(targetRPS * INDEX_SPEED_SLOW));
   }
 
 //Stops
   public void stopOuttake() {
-    m_outtakeMotorOne.set(0);
-    m_OuttskeMotorTwo.set(0);
+    m_alyssaMotor.set(0);
+    m_nathanMotor.set(0);
   }
   public void stopIndex(){
      m_indexMotor.set(0);

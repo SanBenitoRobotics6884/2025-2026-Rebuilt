@@ -3,6 +3,8 @@ package frc.robot.Constants;
 import java.util.List;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Unit;
 
 public class Constants {
   
@@ -19,8 +21,8 @@ public class Constants {
       If zeroed intake out -> -5, 73
      */
 
-    public static double IN_TAKE_TARGET_ROTATIONS = -5.0;
-    public static double OUT_TAKE_TARGET_ROTATIONS = 73.0;
+    public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
+    public static double OUT_TAKE_TARGET_ROTATIONS = -73.0;
     public static final double LIMIT_SWITCH_ROTATIONS = 1.0;
   }
 
