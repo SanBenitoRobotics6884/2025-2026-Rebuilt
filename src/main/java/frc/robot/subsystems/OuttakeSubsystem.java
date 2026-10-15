@@ -60,7 +60,7 @@ public class OuttakeSubsystem extends SubsystemBase {
 //Normal Run
   public void runOuttake() {
     m_alyssaMotor.setControl(m_request.withVelocity(targetRPS));
-    m_nathanMotor.setControl(new StrictFollower(32));
+    m_nathanMotor.setControl(new StrictFollower(34));
   }
   public void runIndex(){
     m_indexMotor.setControl(m_request.withVelocity(targetRPS));
@@ -72,7 +72,7 @@ public class OuttakeSubsystem extends SubsystemBase {
 //Slow Mode
   public void runOuttakeSlow() {
     m_alyssaMotor.setControl(m_request.withVelocity(targetRPS * OUTTAKE_SPEED_SLOW));
-    m_nathanMotor.setControl(new StrictFollower(32));
+    m_nathanMotor.setControl(new StrictFollower(34));
     m_indexMotor.setControl(m_request.withVelocity(targetRPS * INDEX_SPEED_SLOW));
   }
 
