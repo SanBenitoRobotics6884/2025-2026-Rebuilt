@@ -124,16 +124,16 @@ public class IntakeSubsystem extends SubsystemBase {
 
 //Normal Runs
   public void runIntake() { 
-    m_intakeRoller.setControl(m_request.withVelocity(-targetRPS));
+    m_intakeRoller.set(-0.4);
   }
   public void runIntakeBack(){
-    m_intakeRoller.setControl(m_request.withVelocity(targetRPS));
+    m_intakeRoller.set(0.4);
   }
   public void runStorageRoller(){
-    m_storageRoller.setControl(m_quest.withVelocity(targetRPSTwo));
+    m_storageRoller.set(0.4);
   }
   public void runStorageRollerBack(){
-    m_storageRoller.setControl(m_quest.withVelocity(targetRPSTwo));
+    m_storageRoller.set(0.4);
   }
 
 //Stops

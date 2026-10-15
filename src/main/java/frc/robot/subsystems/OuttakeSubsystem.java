@@ -25,7 +25,7 @@ public class OuttakeSubsystem extends SubsystemBase {
 
   final VelocityVoltage m_request = new VelocityVoltage(1);
   final VelocityVoltage m_quest = new VelocityVoltage(0);
-  double targetRPM = 2000;//4000;
+  double targetRPM = 3000;//4000;
   double targetRPS = targetRPM / 60.0;
 
   /** Creates a new OuttakeSubsystem. */
