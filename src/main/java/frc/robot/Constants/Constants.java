@@ -138,18 +138,35 @@ public final class Constants {
     public static final double kStorageSpeed = 0.4;
 
     /**
-     * Starting screw setpoints, in rotations, before the limit switch homes them.
-     * If zeroed with the intake in, these are about 5 and -73.
-     * If zeroed with the intake out, these are about -5 and 73.
+     * Voltage sent to the left screw to drive toward the fully-in stop. Flip the sign if the first
+     * move drives the extension out. The limit switch still decides which end is "in" when it
+     * trips.
      */
-    public static final double kInitialExtendRotations = 5.0;
-    public static final double kInitialRetractRotations = -73.0;
+    public static final double kInwardVoltage = -3.0;
 
-    /** How far to back off the limit switch when homing, in rotations. */
-    public static final double kLimitSwitchBackoffRotations = 1.0;
+    /** Stator current above this, while the screw is barely moving, means a hard stop. */
+    public static final double kStallCurrentAmps = 35.0;
 
-    /** Rotations from the homed extend position back to the retract position. */
-    public static final double kHomingRetractOffsetRotations = 60.0;
+    /** Below this speed, in rotations per second, the screw is treated as stopped. */
+    public static final double kStallVelocityRps = 0.5;
+
+    /** Ignore current right after a direction change so inrush is not read as a hard stop. */
+    public static final double kInrushSeconds = 0.3;
+
+    /** Current and low speed must hold this long before a hard stop counts. */
+    public static final double kStallSeconds = 0.15;
+
+    /** Give up on one direction after this long so a missed stop cannot grind the screws. */
+    public static final double kCalibrateTimeoutSeconds = 15.0;
+
+    /** Shortest believable travel between the two hard stops, in rotations. */
+    public static final double kMinTravelRotations = 10.0;
+
+    /** Park this many rotations inside each hard stop so the screws are not left stalled. */
+    public static final double kHardStopBackoffRotations = 1.0;
+
+    /** Travel used in simulation, where there is no current spike to measure. */
+    public static final double kSimTravelRotations = 70.0;
   }
 
   public static final class Outtake {

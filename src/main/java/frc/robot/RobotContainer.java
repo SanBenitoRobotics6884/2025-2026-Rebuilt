@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -161,8 +162,24 @@ public class RobotContainer {
         .whileFalse(m_outtake.stopIndexerCommand());
   }
 
+  /**
+   * Finds the screw hard stops before any auto step tries to extend or retract. If calibration
+   * fails, the selected auto is skipped.
+   */
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    Command selected = autoChooser.getSelected();
+    Command calibrate = m_intake.calibrateCommand();
+    if (selected == null) {
+      return calibrate;
+    }
+    return calibrate
+        .andThen(Commands.either(selected, Commands.none(), m_intake::isCalibrated))
+        .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
+  }
+
+  /** Finds the screw hard stops when the robot enables in teleop. No-ops if already calibrated. */
+  public Command calibrateIntakeCommand() {
+    return m_intake.calibrateCommand();
   }
 
   /**
