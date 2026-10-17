@@ -78,5 +78,8 @@ public class Robot extends TimedRobot {
   public void testExit() {}
 
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    // Only runs in simulation, never on the real robot. Updates the fake Limelight.
+    robotContainer.simulationPeriodic();
+  }
 }

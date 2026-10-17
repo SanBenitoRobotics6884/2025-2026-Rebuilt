@@ -48,6 +48,8 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
   private final IntakeSubsystem intake = new IntakeSubsystem();
   private final OuttakeSubsystem outtake = new OuttakeSubsystem();
+  // Just constructing this starts vision. Subsystems are polled every robot cycle, so periodic()
+  // keeps reading the Limelight without a button, a default command, or an auto step.
   private final VisionSubsystem vision = new VisionSubsystem(drivetrain);
 
   /** Physical constraints for pathfinding. Linear units are m/s and m/s^2. Angular units are rad/s and rad/s^2. */
@@ -152,5 +154,14 @@ public class RobotContainer {
 
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
+  }
+
+  /**
+   * Simulation only. The real Limelight is not here, so each cycle we tell the fake camera where
+   * the simulated robot is. It then pretends to see whatever AprilTags would be in front of that
+   * pose. WPILib calls this after the main robot loop.
+   */
+  public void simulationPeriodic() {
+    vision.simulationPeriodic(drivetrain.getPose());
   }
 }
