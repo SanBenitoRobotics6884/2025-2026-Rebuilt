@@ -4,219 +4,190 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.StatusSignal;
+import static frc.robot.Constants.Constants.Intake.*;
+
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
-import com.ctre.phoenix6.controls.Follower;
 
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import static frc.robot.Constants.Constants.Intake.*;
-
 public class IntakeSubsystem extends SubsystemBase {
-  TalonFX m_leftLinearScrew;
-  TalonFX m_rightLinearScrew;
-  TalonFX m_intakeRoller;
-  TalonFX m_storageRoller;
+  private final TalonFX leftLinearScrew = new TalonFX(20);
+  private final TalonFX rightLinearScrew = new TalonFX(30);
+  private final TalonFX intakeRoller = new TalonFX(10);
+  private final TalonFX storageRoller = new TalonFX(40);
 
-  PositionVoltage p_PositionRequest = new PositionVoltage(0).withSlot(0);
-  // PositionVoltage p_LimitVoltge = new PositionVoltage(0).withSlot(0);
-  private DigitalInput i_limitSwitch = new DigitalInput(0);
+  private final PositionVoltage positionRequest = new PositionVoltage(0).withSlot(0);
+  private final DigitalInput limitSwitch = new DigitalInput(LIMIT_SWITCH_STORAGE_DIO);
   private final Timer simTimer = new Timer();
-
-  final VelocityVoltage m_request = new VelocityVoltage(0);
-  double targetRPM = 3000;
-  double targetRPS = targetRPM / 60.0;
-  final VelocityVoltage m_quest = new VelocityVoltage(0);
-  double targetRPMTwo = 1000;
-  double targetRPSTwo = targetRPM / 60.0;
 
   /** Creates a new Intake. */
   public IntakeSubsystem() {
-    m_leftLinearScrew = new TalonFX(20);
-    m_rightLinearScrew = new TalonFX(30);
-    m_intakeRoller = new TalonFX(10);
-    m_storageRoller = new TalonFX(40);
-
-  //RPM
     var slot0Configs = new Slot0Configs();
-    slot0Configs.kP = PID_P_VALUE; // Tune this value (output per rotation of error)
-    
-    // Add kI, kD, kS, kV if needed for better control
-    m_leftLinearScrew.getConfigurator().apply(slot0Configs);
-    m_rightLinearScrew.getConfigurator().apply(slot0Configs);
-    m_rightLinearScrew.setControl(new Follower(m_leftLinearScrew.getDeviceID(), MotorAlignmentValue.Aligned));
+    slot0Configs.kP = PID_P_VALUE;
 
+    leftLinearScrew.getConfigurator().apply(slot0Configs);
+    rightLinearScrew.getConfigurator().apply(slot0Configs);
+    rightLinearScrew.setControl(
+        new Follower(leftLinearScrew.getDeviceID(), MotorAlignmentValue.Aligned));
 
     if (RobotBase.isSimulation()) {
-            simTimer.start();
+      simTimer.start();
     }
   }
 
-//Limit Switch
   public boolean isLimitPressed() {
-        // if (RobotBase.isSimulation()){
-        //     return simTimer.hasElapsed(5.0);
-        // }
-        boolean x = i_limitSwitch.get(); // for debugging purposes
-        return !i_limitSwitch.get(); 
-        // If using NC wiring, invert it
-    }
+    // Invert when the switch is wired normally closed.
+    return !limitSwitch.get();
+  }
 
-  //Timers
-    public void resetTimers() {
-        simTimer.start();
-        simTimer.reset();
-    }
-    
+  public void resetTimers() {
+    simTimer.start();
+    simTimer.reset();
+  }
 
   @Override
   public void periodic() {
-    double lposition = m_leftLinearScrew.getPosition(true).getValueAsDouble();
-    double rposition = m_rightLinearScrew.getPosition(true).getValueAsDouble();
-    // System.out.println(lposition);
-    // System.out.println(rposition);
-    if(isLimitPressed()){
+    if (isLimitPressed()) {
       littleExtenedIntake();
     }
-    // This method will be called once per scheduler run
   }
 
-  //MOTOR USES
-
-//Intake Extension
   public void extendIntake() {
-    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
-    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
+    leftLinearScrew.setControl(positionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+    rightLinearScrew.setControl(positionRequest.withPosition(IN_TAKE_TARGET_ROTATIONS));
   }
+
   public void retractIntake() {
-      m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-OUT_TAKE_TARGET_ROTATIONS));
-      m_rightLinearScrew.setControl(p_PositionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
+    leftLinearScrew.setControl(positionRequest.withPosition(-OUT_TAKE_TARGET_ROTATIONS));
+    rightLinearScrew.setControl(positionRequest.withPosition(OUT_TAKE_TARGET_ROTATIONS));
   }
+
   public void littleExtenedIntake() {
-    double position = m_leftLinearScrew.getPosition(true).getValueAsDouble();
+    double position = leftLinearScrew.getPosition(true).getValueAsDouble();
     double targetPosition = position - LIMIT_SWITCH_ROTATIONS;
-    System.out.println(position);
-    System.out.println(targetPosition);
-    System.out.println(IN_TAKE_TARGET_ROTATIONS);
-    System.out.println(OUT_TAKE_TARGET_ROTATIONS);
-    // IN_TAKE_TARGET_ROTATIONS = targetPosition;
-    // OUT_TAKE_TARGET_ROTATIONS = targetPosition - 60;
     OUT_TAKE_TARGET_ROTATIONS = targetPosition - 60;
     IN_TAKE_TARGET_ROTATIONS = targetPosition;
-    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
-    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(targetPosition));
+    leftLinearScrew.setControl(positionRequest.withPosition(targetPosition));
+    rightLinearScrew.setControl(positionRequest.withPosition(targetPosition));
   }
 
-//Extention reset
-   public void extendReset() {
-    m_leftLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
-    m_rightLinearScrew.setControl(p_PositionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+  public void extendReset() {
+    leftLinearScrew.setControl(positionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
+    rightLinearScrew.setControl(positionRequest.withPosition(-IN_TAKE_TARGET_ROTATIONS));
   }
 
-//Normal Runs
-  public void runIntake() { 
-    m_intakeRoller.set(-0.4);
-  }
-  public void runIntakeBack(){
-    m_intakeRoller.set(0.4);
-  }
-  public void runStorageRoller(){
-    m_storageRoller.set(0.4);
-  }
-  public void runStorageRollerBack(){
-    m_storageRoller.set(0.4);
+  public void runIntake() {
+    intakeRoller.set(-0.4);
   }
 
-//Stops
+  public void runIntakeBack() {
+    intakeRoller.set(0.4);
+  }
+
+  public void runStorageRoller() {
+    storageRoller.set(0.4);
+  }
+
+  public void runStorageRollerBack() {
+    storageRoller.set(0.4);
+  }
+
   public void stopStorage() {
-    if(!isLimitPressed()){
-        m_leftLinearScrew.set(0);
-        m_rightLinearScrew.set(0);
+    if (!isLimitPressed()) {
+      leftLinearScrew.set(0);
+      rightLinearScrew.set(0);
     }
   }
+
   public void stopIntake() {
-    m_intakeRoller.set(0);
-    m_storageRoller.set(0);
-  }
-  public void stopRollers(){
-    m_storageRoller.set(0);
+    intakeRoller.set(0);
+    storageRoller.set(0);
   }
 
+  public void stopRollers() {
+    storageRoller.set(0);
+  }
 
-  //COMMANDS
-// Extension Commands Auto
-public Command extendIntakeCommand() {
+  public Command extendIntakeCommand() {
     return runOnce(this::retractIntake);
   }
+
   public Command retractIntakeCommand() {
     return runOnce(this::retractIntake);
   }
+
   public Command littleExtendIntakeCommand() {
     return runOnce(this::littleExtenedIntake);
   }
-  //Extention Reset Command
-    public Command extendresetCommand() {
+
+  public Command extendresetCommand() {
     return run(this::extendReset);
   }
 
-//Extension Commands
   public Command extendIntakeTeleCommand() {
     return run(this::extendIntake);
   }
+
   public Command retractIntakeTeleCommand() {
     return run(this::retractIntake);
   }
+
   public Command littleExtendIntakeTeleCommand() {
     return run(this::littleExtenedIntake);
   }
-  //Extention Reset Command
+
   public Command extendresetTeleCommand() {
     return run(this::extendReset);
   }
-// Normal Run Auto Commands
-public Command runIntakeCommand() {
+
+  public Command runIntakeCommand() {
     return runOnce(this::runIntake);
   }
-  public Command runIntakeBackCommand(){
+
+  public Command runIntakeBackCommand() {
     return runOnce(this::runIntakeBack);
   }
-  public Command runStorgeRollersCommand(){
+
+  public Command runStorgeRollersCommand() {
     return runOnce(this::runStorageRoller);
   }
-  public Command runStorgeRollersBackCommand(){
+
+  public Command runStorgeRollersBackCommand() {
     return runOnce(this::runStorageRollerBack);
   }
-//Normal Run Commands
+
   public Command runIntaketeleCommand() {
     return run(this::runIntake);
   }
-  public Command runIntakeBackteleCommand(){
+
+  public Command runIntakeBackteleCommand() {
     return run(this::runIntakeBack);
   }
-  public Command runStorgeRollersteleCommand(){
+
+  public Command runStorgeRollersteleCommand() {
     return run(this::runStorageRoller);
   }
-  public Command runStorgeRollersBackteleCommand(){
+
+  public Command runStorgeRollersBackteleCommand() {
     return run(this::runStorageRollerBack);
   }
 
-//Stop Commands
   public Command stopStorageCommand() {
     return runOnce(this::stopStorage);
   }
+
   public Command stopIntakeCommand() {
     return runOnce(this::stopIntake);
   }
+
   public Command stopRollerCommand() {
     return runOnce(this::stopRollers);
   }

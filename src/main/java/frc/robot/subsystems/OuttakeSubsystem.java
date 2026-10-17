@@ -4,142 +4,102 @@
 
 package frc.robot.subsystems;
 
+import static frc.robot.Constants.Constants.Outtake.*;
+
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import static frc.robot.Constants.Constants.Outtake.*;
-
 public class OuttakeSubsystem extends SubsystemBase {
-  TalonFX m_alyssaMotor;
-  TalonFX m_nathanMotor;
-  
-  TalonFX m_indexMotor;
-  DutyCycleOut speed;
+  private final TalonFX alyssaMotor = new TalonFX(34);
+  private final TalonFX nathanMotor = new TalonFX(62);
+  private final TalonFX indexMotor = new TalonFX(50);
 
-  final VelocityVoltage m_request = new VelocityVoltage(1);
-  final VelocityVoltage m_quest = new VelocityVoltage(0);
-  double targetRPM = 3000;//4000;
-  double targetRPS = targetRPM / 60.0;
-
-  InterpolatingDoubleTreeMap m_linearInterpolator = new InterpolatingDoubleTreeMap();
+  private final VelocityVoltage velocityRequest = new VelocityVoltage(1);
+  private final double targetRps = 3000.0 / 60.0;
 
   /** Creates a new OuttakeSubsystem. */
-
   public OuttakeSubsystem() {
-    m_alyssaMotor = new TalonFX(34);
-    m_nathanMotor = new TalonFX(62);
-    m_indexMotor = new TalonFX(50);
-  
-  //RPM
     var slot0Configs = new Slot0Configs();
     var slot1Configs = new Slot0Configs();
     var slot2Configs = new Slot0Configs();
-    slot0Configs.kP = PID_P_VALUE; 
+    slot0Configs.kP = PID_P_VALUE;
     slot1Configs.kP = PID_P_VALUE;
-    slot2Configs.kP = PID_P_VALUE;// Tune this value (output per rotation of error)
-    // slot0Configs.kI = PID_I_VALUE;
-    // slot0Configs.kD = PID_D_VALUE;
-    // Add kI, kD, kS, kV if needed for better control
-    m_alyssaMotor.getConfigurator().apply(slot1Configs);
-    m_nathanMotor.getConfigurator().apply(slot2Configs);
-    m_indexMotor.getConfigurator().apply(slot0Configs);
+    slot2Configs.kP = PID_P_VALUE;
+
+    alyssaMotor.getConfigurator().apply(slot1Configs);
+    nathanMotor.getConfigurator().apply(slot2Configs);
+    indexMotor.getConfigurator().apply(slot0Configs);
   }
 
-  @Override
-  public void periodic() {
-    // This method will be called once per scheduler run
-  }
-/*
- * MOTOR USES
- */
-//Normal Run
   public void runOuttake() {
-    m_alyssaMotor.setControl(m_request.withVelocity(targetRPS));
-    m_nathanMotor.setControl(new StrictFollower(34));
-  }
-  public void runIndex(){
-    m_indexMotor.setControl(m_request.withVelocity(targetRPS));
-  }
-    public void reverseIndex() {
-    m_indexMotor.setControl(m_request.withVelocity(-targetRPS));
+    alyssaMotor.setControl(velocityRequest.withVelocity(targetRps));
+    nathanMotor.setControl(new StrictFollower(34));
   }
 
-//Slow Mode
+  public void runIndex() {
+    indexMotor.setControl(velocityRequest.withVelocity(targetRps));
+  }
+
+  public void reverseIndex() {
+    indexMotor.setControl(velocityRequest.withVelocity(-targetRps));
+  }
+
   public void runOuttakeSlow() {
-    m_alyssaMotor.setControl(m_request.withVelocity(targetRPS * OUTTAKE_SPEED_SLOW));
-    m_nathanMotor.setControl(new StrictFollower(34));
-    m_indexMotor.setControl(m_request.withVelocity(targetRPS * INDEX_SPEED_SLOW));
+    alyssaMotor.setControl(velocityRequest.withVelocity(targetRps * OUTTAKE_SPEED_SLOW));
+    nathanMotor.setControl(new StrictFollower(34));
+    indexMotor.setControl(velocityRequest.withVelocity(targetRps * INDEX_SPEED_SLOW));
   }
 
-//Stops
   public void stopOuttake() {
-    m_alyssaMotor.set(0);
-    m_nathanMotor.set(0);
+    alyssaMotor.set(0);
+    nathanMotor.set(0);
   }
-  public void stopIndex(){
-     m_indexMotor.set(0);
+
+  public void stopIndex() {
+    indexMotor.set(0);
   }
-/*
- * COMMANDS
- */
-// Run Auto Commands
- public Command runOuttakecommand() {
+
+  public Command runOuttakecommand() {
     return runOnce(this::runOuttake);
   }
-    public Command runOuttakeSlowCommand() {
+
+  public Command runOuttakeSlowCommand() {
     return runOnce(this::runOuttakeSlow);
   }
-    public Command runIndexCommand() {
-      return runOnce(this::runIndex);
-    }
-    public Command runReverseIndexCommand() {
+
+  public Command runIndexCommand() {
+    return runOnce(this::runIndex);
+  }
+
+  public Command runReverseIndexCommand() {
     return runOnce(this::reverseIndex);
   }
-  
-  // Needs to be fed the distance to the hub from the bot.
-    public void advShootBall(double aprilTagDist) {
-    /*
-     * The method will shoot the ball, but takes into account the distance of the select AprilTag and decide speed from there.
-     * Plans to use Linear Interpolation for this with PhotonVision.
-     */
-    m_outtakeMotor.set(interpolateDistance(aprilTagDist));
-  }
 
-  public double interpolateDistance(double distance) {
-    // Needs measurements.
-    m_linearInterpolator.put(1.0, 1.0);  // key -> meters away from hub, value -> motor speed from (0 - 1)
-    m_linearInterpolator.put(null, null);
-    return m_linearInterpolator.get(distance);
-  }
-
-  //COMMANDS
-
-//Run Commands
   public Command runOuttaketelecommand() {
     return run(this::runOuttake);
   }
-    public Command runOuttakeSlowteleCommand() {
+
+  public Command runOuttakeSlowteleCommand() {
     return run(this::runOuttakeSlow);
   }
-    public Command runIndexteleCommand() {
-      return run(this::runIndex);
-    }
-    public Command runReverseIndexteleCommand() {
+
+  public Command runIndexteleCommand() {
+    return run(this::runIndex);
+  }
+
+  public Command runReverseIndexteleCommand() {
     return run(this::reverseIndex);
   }
 
-//Stop Commands
   public Command stopOuttakeCommand() {
     return runOnce(this::stopOuttake);
   }
+
   public Command stopIndexCommand() {
     return runOnce(this::stopIndex);
   }

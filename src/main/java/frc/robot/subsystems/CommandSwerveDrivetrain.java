@@ -8,9 +8,6 @@ import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
-import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
@@ -45,68 +42,53 @@ import frc.robot.Constants.TunerConstants.TunerSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-     // PathPlanner will hand us ROBOT-relative ChassisSpeeds. CTRE has a native request for that.
+  /** PathPlanner hands over robot-relative chassis speeds. CTRE has a native request for that. */
   private final SwerveRequest.ApplyRobotSpeeds ppRobotSpeeds =
       new SwerveRequest.ApplyRobotSpeeds()
           .withDriveRequestType(SwerveModule.DriveRequestType.OpenLoopVoltage)
           .withSteerRequestType(SwerveModule.SteerRequestType.Position);
 
-  public void DriveSubsystem() {
-    configurePathPlanner();
-  }
-
-   private void configurePathPlanner() {
+  /** Configures PathPlanner from the GUI robot settings. */
+  public void configurePathPlanner() {
     RobotConfig config;
     try {
       config = RobotConfig.fromGUISettings();
-    } catch (Exception e) {
-      e.printStackTrace();
+    } catch (Exception exception) {
+      DriverStation.reportError("Failed to configure PathPlanner", exception.getStackTrace());
       return;
     }
 
-     // HashMap<String, Command> eventMap = new HashMap<>();
-     // eventMap.put("RunIntake", s_IntakeSubsystem.runIntakeCommand());
-
-     AutoBuilder.configure(
+    AutoBuilder.configure(
         this::getPose,
         this::resetPose,
         this::getRobotRelativeSpeeds,
-        // (speeds, feedforwards) -> driveRobotRelative(speeds), // ignore feedforwards for now
         (speeds, feedforwards) -> this.setControl(
             new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds)
-            .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
-            .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
-            .withDriveRequestType(com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType.Velocity)
-            
+                .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
+                .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())
+                .withDriveRequestType(SwerveModule.DriveRequestType.Velocity)
         ),
         new PPHolonomicDriveController(
             new PIDConstants(5.0, 0.0, 0.0), // translation
-            new PIDConstants(2.0, 0.0, 0.0)  // rotation
+            new PIDConstants(2.0, 0.0, 0.0) // rotation
         ),
         config,
         () -> DriverStation.getAlliance().isPresent()
-              && DriverStation.getAlliance().get() == DriverStation.Alliance.Red,
+            && DriverStation.getAlliance().get() == Alliance.Red,
         this
     );
   }
 
-  // --- PathPlanner-required methods ---
   public Pose2d getPose() {
     return this.getState().Pose;
   }
 
-//   public void resetPose(Pose2d pose) {
-//    // this.resetPose(pose);
-//    this.
-    
-//   }
-
-  /** MUST be robot-relative speeds (NOT field-relative) */
+  /** Robot-relative speeds, not field-relative. */
   public ChassisSpeeds getRobotRelativeSpeeds() {
     return this.getState().Speeds;
   }
 
-  /** Drive using robot-relative chassis speeds */
+  /** Drive using robot-relative chassis speeds. */
   public void driveRobotRelative(ChassisSpeeds speeds) {
     this.setControl(ppRobotSpeeds.withSpeeds(speeds));
   }
