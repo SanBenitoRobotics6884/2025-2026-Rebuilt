@@ -11,6 +11,7 @@ import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -27,6 +28,8 @@ public class OuttakeSubsystem extends SubsystemBase {
   final VelocityVoltage m_quest = new VelocityVoltage(0);
   double targetRPM = 3000;//4000;
   double targetRPS = targetRPM / 60.0;
+
+  InterpolatingDoubleTreeMap m_linearInterpolator = new InterpolatingDoubleTreeMap();
 
   /** Creates a new OuttakeSubsystem. */
 
@@ -100,6 +103,25 @@ public class OuttakeSubsystem extends SubsystemBase {
     public Command runReverseIndexCommand() {
     return runOnce(this::reverseIndex);
   }
+  
+  // Needs to be fed the distance to the hub from the bot.
+    public void advShootBall(double aprilTagDist) {
+    /*
+     * The method will shoot the ball, but takes into account the distance of the select AprilTag and decide speed from there.
+     * Plans to use Linear Interpolation for this with PhotonVision.
+     */
+    m_outtakeMotor.set(interpolateDistance(aprilTagDist));
+  }
+
+  public double interpolateDistance(double distance) {
+    // Needs measurements.
+    m_linearInterpolator.put(1.0, 1.0);  // key -> meters away from hub, value -> motor speed from (0 - 1)
+    m_linearInterpolator.put(null, null);
+    return m_linearInterpolator.get(distance);
+  }
+
+  //COMMANDS
+
 //Run Commands
   public Command runOuttaketelecommand() {
     return run(this::runOuttake);

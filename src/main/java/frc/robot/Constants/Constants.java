@@ -7,6 +7,9 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Unit;
 
 public class Constants {
+  public class Vision {
+    public static final String CAMERA_NAME = "HD_USB_CAMERA";
+  }
   
   public class Intake {
     public static final int LIMIT_SWITCH_STORAGE_DIO = 0;

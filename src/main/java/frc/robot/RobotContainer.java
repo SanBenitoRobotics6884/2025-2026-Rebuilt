@@ -154,11 +154,12 @@ public class RobotContainer {
         }
     
         
-    //Limit Switch
-        // new Trigger(CommandScheduler.getInstance().getDefaultButtonLoop(), m_IntakeSubsystem::isLimitPressed) 
-        // //.whileTrue(m_IntakeSubsystem.extendIntakeCommand());   
-        // .onTrue(m_IntakeSubsystem.littleExtendIntakeCommand());
-            
+    //PhotonVision Controlls
+        // UP
+        joystick.pov(0);
+        // LEFT
+        joystick.pov(270);
+        
 
     //Slow Mode
         joystick.leftBumper().whileTrue(
