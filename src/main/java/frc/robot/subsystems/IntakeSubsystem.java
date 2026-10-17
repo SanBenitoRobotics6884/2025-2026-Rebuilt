@@ -22,14 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class IntakeSubsystem extends SubsystemBase {
-  private enum CalibrationPhase {
-    IDLE,
-    SEEK_FIRST,
-    SEEK_SECOND,
-    DONE,
-    FAILED
-  }
-
   private final TalonFX m_leftScrew = new TalonFX(kLeftScrewId);
   private final TalonFX m_rightScrew = new TalonFX(kRightScrewId);
   private final TalonFX m_intakeRoller = new TalonFX(kIntakeRollerId);
@@ -39,25 +31,8 @@ public class IntakeSubsystem extends SubsystemBase {
   private final VoltageOut m_voltageOut = new VoltageOut(0);
   private final DigitalInput m_limitSwitch = new DigitalInput(kLimitSwitchDio);
   private final Timer m_simTimer = new Timer();
-  private final Timer m_phaseTimer = new Timer();
-  private final Timer m_stallTimer = new Timer();
-
-  /**
-   * Left-screw encoder targets in rotations. Zero is the fully-in hard stop, after calibration
-   * shifts the encoder. The right screw is commanded to the opposite number.
-   */
-  private double m_extendPositionRotations;
-  private double m_retractPositionRotations;
-
-  private CalibrationPhase m_phase = CalibrationPhase.IDLE;
-  private boolean m_calibrated;
-  private boolean m_failed;
-  private double m_appliedVoltage;
-  private double m_firstPositionRotations;
-  private boolean m_firstHitSwitch;
-  /** Second seek must leave the first stop before another spike can count. */
-  private boolean m_requireMotion;
-  private boolean m_seenMotion;
+  private final ExtensionCalibrator m_calibrator =
+      new ExtensionCalibrator(ExtensionCalibrator.Config.intake());
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
@@ -77,10 +52,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     if (RobotBase.isSimulation()) {
       // Simulation has no stator current, so a hard-stop sweep would only time out.
-      m_retractPositionRotations = kHardStopBackoffRotations;
-      m_extendPositionRotations = kSimTravelRotations - kHardStopBackoffRotations;
-      m_calibrated = true;
-      m_phase = CalibrationPhase.DONE;
+      m_calibrator.assumeCalibrated(
+          kHardStopBackoffRotations, kSimTravelRotations - kHardStopBackoffRotations);
       m_simTimer.start();
     }
 
@@ -88,7 +61,7 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public boolean isCalibrated() {
-    return m_calibrated;
+    return m_calibrator.isCalibrated();
   }
 
   public boolean isLimitPressed() {
@@ -103,13 +76,15 @@ public class IntakeSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putBoolean("Intake/Calibrated", m_calibrated);
-    SmartDashboard.putString("Intake/CalibrationPhase", m_phase.name());
+    SmartDashboard.putBoolean("Intake/Calibrated", m_calibrator.isCalibrated());
+    SmartDashboard.putString("Intake/CalibrationPhase", m_calibrator.phase().name());
     SmartDashboard.putNumber("Intake/ScrewCurrentAmps", screwCurrentAmps());
     SmartDashboard.putNumber(
         "Intake/ScrewPositionRotations", m_leftScrew.getPosition().getValueAsDouble());
-    SmartDashboard.putNumber("Intake/ExtendPositionRotations", m_extendPositionRotations);
-    SmartDashboard.putNumber("Intake/RetractPositionRotations", m_retractPositionRotations);
+    SmartDashboard.putNumber(
+        "Intake/ExtendPositionRotations", m_calibrator.extendPositionRotations());
+    SmartDashboard.putNumber(
+        "Intake/RetractPositionRotations", m_calibrator.retractPositionRotations());
   }
 
   /**
@@ -127,26 +102,26 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Move the screws to the deployed position, just inside the outer hard stop. */
   public void extend() {
-    if (!m_calibrated) {
+    if (!m_calibrator.isCalibrated()) {
       return;
     }
-    setLeftScrewPosition(m_extendPositionRotations);
+    setLeftScrewPosition(m_calibrator.extendPositionRotations());
   }
 
   /** Move the screws to the stowed position, just inside the fully-in hard stop. */
   public void retract() {
-    if (!m_calibrated) {
+    if (!m_calibrator.isCalibrated()) {
       return;
     }
-    setLeftScrewPosition(m_retractPositionRotations);
+    setLeftScrewPosition(m_calibrator.retractPositionRotations());
   }
 
   /** Drive both screws to the same side of the extend setpoint. */
   public void resetScrews() {
-    if (!m_calibrated) {
+    if (!m_calibrator.isCalibrated()) {
       return;
     }
-    double position = -m_extendPositionRotations;
+    double position = -m_calibrator.extendPositionRotations();
     m_leftScrew.setControl(m_positionRequest.withPosition(position));
     m_rightScrew.setControl(m_positionRequest.withPosition(position));
   }
@@ -227,131 +202,54 @@ public class IntakeSubsystem extends SubsystemBase {
   private Command buildCalibrateCommand(boolean force) {
     return run(this::executeCalibration)
         .beforeStarting(() -> startCalibration(force))
-        .until(() -> m_calibrated || m_failed)
+        .until(() -> m_calibrator.isCalibrated() || m_calibrator.isFailed())
         .finallyDo(this::finishCalibrationCommand)
         .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
   }
 
   private void startCalibration(boolean force) {
-    if (m_calibrated && !force) {
+    if (!m_calibrator.start(force, Timer.getFPGATimestamp())) {
       return;
     }
-    m_calibrated = false;
-    m_failed = false;
-    m_phase = CalibrationPhase.SEEK_FIRST;
-    m_appliedVoltage = kInwardVoltage;
-    m_firstHitSwitch = false;
-    m_requireMotion = false;
-    m_seenMotion = false;
     m_rightScrew.setControl(
         new Follower(m_leftScrew.getDeviceID(), MotorAlignmentValue.Aligned));
-    m_phaseTimer.restart();
-    m_stallTimer.stop();
-    m_stallTimer.reset();
   }
 
   private void executeCalibration() {
-    if (m_calibrated || m_failed || m_phase == CalibrationPhase.IDLE
-        || m_phase == CalibrationPhase.DONE) {
-      return;
+    ExtensionCalibrator.Action action =
+        m_calibrator.step(
+            new ExtensionCalibrator.Sample(
+                m_leftScrew.getPosition().getValueAsDouble(),
+                m_leftScrew.getVelocity().getValueAsDouble(),
+                screwCurrentAmps(),
+                isLimitPressed(),
+                Timer.getFPGATimestamp()));
+    if (action.warning != null) {
+      DriverStation.reportWarning(action.warning, false);
     }
-    if (m_phaseTimer.hasElapsed(kCalibrateTimeoutSeconds)) {
-      failCalibration("Intake calibration timed out before a hard stop.");
-      return;
+    if (action.error != null) {
+      DriverStation.reportError(action.error, false);
     }
-
-    m_leftScrew.setControl(m_voltageOut.withOutput(m_appliedVoltage));
-    if (!m_phaseTimer.hasElapsed(kInrushSeconds)) {
-      m_stallTimer.stop();
-      m_stallTimer.reset();
-      return;
+    if (action.applyVoltage) {
+      m_leftScrew.setControl(m_voltageOut.withOutput(action.voltage));
     }
-    double velocityRps = Math.abs(m_leftScrew.getVelocity().getValueAsDouble());
-    if (velocityRps > kStallVelocityRps) {
-      m_seenMotion = true;
+    if (action.zeroEncoder) {
+      m_leftScrew.setPosition(action.encoderLeftRotations);
+      m_rightScrew.setPosition(action.encoderRightRotations);
     }
-    if (m_requireMotion && !m_seenMotion) {
-      return;
+    if (action.holdRetract) {
+      // Leave the screws just off whichever stop we finished on, then stow them.
+      retract();
     }
-    if (velocityRps >= kStallVelocityRps || screwCurrentAmps() <= kStallCurrentAmps) {
-      m_stallTimer.stop();
-      m_stallTimer.reset();
-      return;
+    if (action.stopScrews) {
+      stopScrews();
     }
-    if (!m_stallTimer.isRunning()) {
-      m_stallTimer.restart();
-    }
-    if (m_stallTimer.hasElapsed(kStallSeconds)) {
-      captureHardStop();
-    }
-  }
-
-  private void captureHardStop() {
-    double position = m_leftScrew.getPosition().getValueAsDouble();
-    boolean switchPressed = isLimitPressed();
-    if (m_phase == CalibrationPhase.SEEK_FIRST) {
-      m_firstPositionRotations = position;
-      m_firstHitSwitch = switchPressed;
-      m_phase = CalibrationPhase.SEEK_SECOND;
-      m_appliedVoltage = -kInwardVoltage;
-      m_requireMotion = true;
-      m_seenMotion = false;
-      m_phaseTimer.restart();
-      m_stallTimer.stop();
-      m_stallTimer.reset();
-      return;
-    }
-    finishCalibration(position, switchPressed);
-  }
-
-  private void finishCalibration(double secondPositionRotations, boolean secondHitSwitch) {
-    boolean firstIsIn;
-    if (m_firstHitSwitch == secondHitSwitch) {
-      firstIsIn = true;
-      DriverStation.reportWarning(
-          "Intake limit switch did not identify the fully-in stop. Using kInwardVoltage direction.",
-          false);
-    } else {
-      firstIsIn = m_firstHitSwitch;
-    }
-
-    double inPosition = firstIsIn ? m_firstPositionRotations : secondPositionRotations;
-    double outPosition = firstIsIn ? secondPositionRotations : m_firstPositionRotations;
-    double travel = outPosition - inPosition;
-    if (Math.abs(travel) < kMinTravelRotations) {
-      failCalibration("Intake hard stops were too close together to calibrate.");
-      return;
-    }
-
-    double shifted = m_leftScrew.getPosition().getValueAsDouble() - inPosition;
-    m_leftScrew.setPosition(shifted);
-    m_rightScrew.setPosition(-shifted);
-
-    double backoff = Math.copySign(kHardStopBackoffRotations, travel);
-    m_retractPositionRotations = backoff;
-    m_extendPositionRotations = travel - backoff;
-    m_calibrated = true;
-    m_failed = false;
-    m_phase = CalibrationPhase.DONE;
-    // Leave the screws just off whichever stop we finished on, then stow them.
-    retract();
-  }
-
-  private void failCalibration(String message) {
-    m_failed = true;
-    m_calibrated = false;
-    m_phase = CalibrationPhase.FAILED;
-    stopScrews();
-    DriverStation.reportError(message, false);
   }
 
   private void finishCalibrationCommand(boolean interrupted) {
-    if (m_calibrated) {
+    m_calibrator.onCommandEnd(interrupted);
+    if (m_calibrator.isCalibrated()) {
       return;
-    }
-    if (interrupted) {
-      m_phase = CalibrationPhase.IDLE;
-      m_failed = false;
     }
     stopScrews();
   }
