@@ -3,35 +3,35 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.6818483412268534,
-        "y": 3.777085308056871
+        "x": 7.061688888888889,
+        "y": 4.424777777777778
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.1546919431279616,
-        "y": 3.787831753554501
+        "x": 7.422233333339408,
+        "y": 8.293322222226811
       },
       "isLocked": false,
-      "linkedName": "Middle facing hub"
+      "linkedName": "MidRight pass to teamside"
     },
     {
       "anchor": {
-        "x": 1.513308080808081,
-        "y": 3.777085308056871
+        "x": 2.7643888888949646,
+        "y": 6.032611111115699
       },
       "prevControl": {
-        "x": 1.1811994949494957,
-        "y": 3.7830555555555554
+        "x": 1.96534444445052,
+        "y": 8.254344444449034
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Base of climb"
+      "linkedName": "in Teamside ready shoot"
     }
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.5,
-      "rotationDegrees": -52.48845922674134
+      "waypointRelativePos": 0.755555555555555,
+      "rotationDegrees": 179.10748967464656
     }
   ],
   "constraintZones": [],
@@ -47,13 +47,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 128.9780722680018
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 179.5592719272373
+    "rotation": 178.8766972859246
   },
   "useDefaultConstraints": true
 }

@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right start to right midfield"
+            "pathName": "Right start to middle ready to collect"
           }
         },
         {
@@ -17,9 +17,15 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
           "type": "named",
           "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopStorageCommand"
           }
         },
         {
@@ -31,43 +37,43 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Right of midfield to left"
+            "pathName": "MidRight collect to pass"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "stopTakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "undeployIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopIntakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Left of midfield to middle left start"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left start to middle facing hub"
+            "pathName": "from collecting to pass"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "runOuttakecommand"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "runRollersCommand"
           }
         },
         {
@@ -80,6 +86,18 @@
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
           }
         }
       ]

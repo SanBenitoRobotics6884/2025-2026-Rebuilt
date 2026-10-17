@@ -7,13 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "middle start to left start"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Left start to middle left of midfield"
+            "pathName": "Right start to middle ready to collect"
           }
         },
         {
@@ -23,15 +17,15 @@
           }
         },
         {
-          "type": "named",
+          "type": "wait",
           "data": {
-            "name": "stopInOutTakeCommand"
+            "waitTime": 1.0
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 0.5
+            "name": "stopStorageCommand"
           }
         },
         {
@@ -43,37 +37,25 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Left of midfield to right"
+            "pathName": "MidRight collect to pass"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "stopTakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "undeployIntakeCommand"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "stopInOutTakeCommand"
+            "name": "stopIntakeCommand"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right of midfield back to middle of alliance field"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right start to middle facing hub"
+            "pathName": "From Collecting in Mid to Right start"
           }
         },
         {
@@ -85,13 +67,50 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 1.5
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "runRollersCommand"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "runIndexCommand"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.0
           }
         },
         {
           "type": "named",
           "data": {
             "name": "stopOuttakeCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopIndexCommand"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopRollersCommand"
           }
         }
       ]

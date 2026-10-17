@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.563219696969697,
-        "y": 4.046452020202021
+        "x": 7.061688888888889,
+        "y": 4.424777777777778
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.9182323232323233,
-        "y": 4.069356060606062
+        "x": 6.516,
+        "y": 5.516155555555556
       },
       "isLocked": false,
-      "linkedName": "middle start"
+      "linkedName": "MidRight pass to teamside"
     },
     {
       "anchor": {
-        "x": 1.513308080808081,
-        "y": 3.777085308056871
+        "x": 6.4088111111111115,
+        "y": 5.779255555555555
       },
       "prevControl": {
-        "x": 1.2634812310209897,
-        "y": 3.7863882713190864
+        "x": 6.730377777777778,
+        "y": 5.116633333333333
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Base of climb"
+      "linkedName": "Midleft pass"
     }
   ],
   "rotationTargets": [],
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 8.383248480929362
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": 178.8766972859246
   },
   "useDefaultConstraints": true
 }
