@@ -15,92 +15,96 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class OuttakeSubsystem extends SubsystemBase {
-  private final TalonFX alyssaMotor = new TalonFX(34);
-  private final TalonFX nathanMotor = new TalonFX(62);
-  private final TalonFX indexMotor = new TalonFX(50);
+  private final TalonFX m_shooterLeader = new TalonFX(kShooterLeaderId);
+  private final TalonFX m_shooterFollower = new TalonFX(kShooterFollowerId);
+  private final TalonFX m_indexer = new TalonFX(kIndexerId);
 
-  private final VelocityVoltage velocityRequest = new VelocityVoltage(1);
-  private final double targetRps = 3000.0 / 60.0;
+  private final VelocityVoltage m_velocityRequest = new VelocityVoltage(1);
 
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
-    var slot0Configs = new Slot0Configs();
-    var slot1Configs = new Slot0Configs();
-    var slot2Configs = new Slot0Configs();
-    slot0Configs.kP = PID_P_VALUE;
-    slot1Configs.kP = PID_P_VALUE;
-    slot2Configs.kP = PID_P_VALUE;
+    var shooterGains = new Slot0Configs();
+    shooterGains.kP = kP;
 
-    alyssaMotor.getConfigurator().apply(slot1Configs);
-    nathanMotor.getConfigurator().apply(slot2Configs);
-    indexMotor.getConfigurator().apply(slot0Configs);
+    m_shooterLeader.getConfigurator().apply(shooterGains);
+    m_shooterFollower.getConfigurator().apply(shooterGains);
+    m_indexer.getConfigurator().apply(shooterGains);
   }
 
-  public void runOuttake() {
-    alyssaMotor.setControl(velocityRequest.withVelocity(targetRps));
-    nathanMotor.setControl(new StrictFollower(34));
+  /** Spin the shooter leader. The follower copies it. */
+  public void shoot() {
+    m_shooterLeader.setControl(m_velocityRequest.withVelocity(kShooterVelocityRps));
+    m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
   }
 
-  public void runIndex() {
-    indexMotor.setControl(velocityRequest.withVelocity(targetRps));
+  /** Spin the feeder forward. */
+  public void index() {
+    m_indexer.setControl(m_velocityRequest.withVelocity(kShooterVelocityRps));
   }
 
+  /** Spin the feeder backward. */
   public void reverseIndex() {
-    indexMotor.setControl(velocityRequest.withVelocity(-targetRps));
+    m_indexer.setControl(m_velocityRequest.withVelocity(-kShooterVelocityRps));
   }
 
-  public void runOuttakeSlow() {
-    alyssaMotor.setControl(velocityRequest.withVelocity(targetRps * OUTTAKE_SPEED_SLOW));
-    nathanMotor.setControl(new StrictFollower(34));
-    indexMotor.setControl(velocityRequest.withVelocity(targetRps * INDEX_SPEED_SLOW));
+  /** Spin the shooter at half speed and the feeder at a quarter speed. */
+  public void shootSlow() {
+    m_shooterLeader.setControl(
+        m_velocityRequest.withVelocity(kShooterVelocityRps * kShooterSlowScale));
+    m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
+    m_indexer.setControl(m_velocityRequest.withVelocity(kShooterVelocityRps * kIndexerSlowScale));
   }
 
-  public void stopOuttake() {
-    alyssaMotor.set(0);
-    nathanMotor.set(0);
+  public void stopShooter() {
+    m_shooterLeader.set(0);
+    m_shooterFollower.set(0);
   }
 
-  public void stopIndex() {
-    indexMotor.set(0);
+  public void stopIndexer() {
+    m_indexer.set(0);
   }
 
-  public Command runOuttakecommand() {
-    return runOnce(this::runOuttake);
+  /** Reapplies shooter velocity until the command is interrupted. */
+  public Command shootCommand() {
+    return run(this::shoot);
   }
 
-  public Command runOuttakeSlowCommand() {
-    return runOnce(this::runOuttakeSlow);
+  /** Reapplies the slow shot until the command is interrupted. */
+  public Command shootSlowCommand() {
+    return run(this::shootSlow);
   }
 
-  public Command runIndexCommand() {
-    return runOnce(this::runIndex);
+  /** Reapplies indexer velocity until the command is interrupted. */
+  public Command indexCommand() {
+    return run(this::index);
   }
 
-  public Command runReverseIndexCommand() {
-    return runOnce(this::reverseIndex);
-  }
-
-  public Command runOuttaketelecommand() {
-    return run(this::runOuttake);
-  }
-
-  public Command runOuttakeSlowteleCommand() {
-    return run(this::runOuttakeSlow);
-  }
-
-  public Command runIndexteleCommand() {
-    return run(this::runIndex);
-  }
-
-  public Command runReverseIndexteleCommand() {
+  /** Reapplies reverse indexer velocity until the command is interrupted. */
+  public Command reverseIndexCommand() {
     return run(this::reverseIndex);
   }
 
-  public Command stopOuttakeCommand() {
-    return runOnce(this::stopOuttake);
+  /**
+   * Sets shooter velocity once and ends, so an auto step can continue while the wheels stay spun
+   * up.
+   */
+  public Command startShooterCommand() {
+    return runOnce(this::shoot);
   }
 
-  public Command stopIndexCommand() {
-    return runOnce(this::stopIndex);
+  /**
+   * Sets indexer velocity once and ends, so an auto step can continue while the feeder stays spun
+   * up.
+   */
+  public Command startIndexerCommand() {
+    return runOnce(this::index);
+  }
+
+  public Command stopShooterCommand() {
+    return runOnce(this::stopShooter);
+  }
+
+  public Command stopIndexerCommand() {
+    return runOnce(this::stopIndexer);
   }
 }

@@ -122,52 +122,70 @@ public final class Constants {
   }
 
   public static final class Intake {
-    public static final int LIMIT_SWITCH_STORAGE_DIO = 0;
+    public static final int kLeftScrewId = 20;
+    public static final int kRightScrewId = 30;
+    public static final int kIntakeRollerId = 10;
+    public static final int kStorageRollerId = 40;
 
-    public static final double PID_P_VALUE = 0.4;
+    public static final int kLimitSwitchDio = 0;
 
-    public static final double TAKE_SPEED = -0.250;
-    public static final double STORAGEROLLER_SPEED = 0.15;
+    public static final double kP = 0.4;
 
-    /*
-     * If zeroed intake in -> 5, -73
-     * If zeroed intake out -> -5, 73
-     * These are updated at runtime when the limit switch trips.
+    /** Duty cycle for the intake roller. Negative pulls a game piece in. */
+    public static final double kIntakeSpeed = -0.4;
+
+    /** Duty cycle for the storage roller. */
+    public static final double kStorageSpeed = 0.4;
+
+    /**
+     * Starting screw setpoints, in rotations, before the limit switch homes them.
+     * If zeroed with the intake in, these are about 5 and -73.
+     * If zeroed with the intake out, these are about -5 and 73.
      */
-    public static double IN_TAKE_TARGET_ROTATIONS = 5.0;
-    public static double OUT_TAKE_TARGET_ROTATIONS = -73.0;
-    public static final double LIMIT_SWITCH_ROTATIONS = 1.0;
+    public static final double kInitialExtendRotations = 5.0;
+    public static final double kInitialRetractRotations = -73.0;
+
+    /** How far to back off the limit switch when homing, in rotations. */
+    public static final double kLimitSwitchBackoffRotations = 1.0;
+
+    /** Rotations from the homed extend position back to the retract position. */
+    public static final double kHomingRetractOffsetRotations = 60.0;
   }
 
   public static final class Outtake {
-    public static final double OUTTAKE_SPEED = 0.98;
-    public static final double INDEX_SPEED = 0.5;
+    public static final int kShooterLeaderId = 34;
+    public static final int kShooterFollowerId = 62;
+    public static final int kIndexerId = 50;
 
-    public static final double OUTTAKE_SPEED_SLOW = 0.5;
-    public static final double INDEX_SPEED_SLOW = 0.25;
+    /** Closed-loop shooter and indexer speed, in rotations per second (3000 rpm). */
+    public static final double kShooterVelocityRps = 3000.0 / 60.0;
 
-    public static final double PID_P_VALUE = 0.7;
+    public static final double kP = 0.7;
+
+    /** Multiplier on {@link #kShooterVelocityRps} for the slow shooter. */
+    public static final double kShooterSlowScale = 0.5;
+
+    /** Multiplier on {@link #kShooterVelocityRps} for the indexer during a slow shot. */
+    public static final double kIndexerSlowScale = 0.25;
   }
 
-  public static final class Container {
-    public static final double SLOW_SWERVE_SPEED = 0.5;
+  public static final class OperatorConstants {
+    public static final double kSlowDriveScale = 0.5;
 
-    public static final int CONTROLER_PORT = 0;
+    public static final int kDriverControllerPort = 0;
+    public static final int kOperatorControllerPort = 1;
 
-    /*
-     * These do not match WPILib POV angles (up = 0, right = 90, down = 180, left = 270).
-     * The bindings use these values as-is.
-     */
-    public static final int D_PAD_LEFT = 0;
-    public static final int D_PAD_DOWN = 90;
-    public static final int D_PAD_RIGHT = 180;
-    public static final int D_PAD_UP = 270;
+    /** WPILib POV angles: up = 0, right = 90, down = 180, left = 270. */
+    public static final int kPovUp = 0;
+    public static final int kPovRight = 90;
+    public static final int kPovDown = 180;
+    public static final int kPovLeft = 270;
 
     /** Linear units are meters. Angular units are radians. */
-    public static final double MAX_VELOCITY = 0;
-    public static final double MAX_ACCELERATION = 0;
-    public static final double MAX_ANGULAR_VELOCITY = 0;
-    public static final double MAX_ANGULAR_ACCELERATION = 0;
+    public static final double kMaxVelocity = 0;
+    public static final double kMaxAcceleration = 0;
+    public static final double kMaxAngularVelocity = 0;
+    public static final double kMaxAngularAcceleration = 0;
   }
 
   private Constants() {}
