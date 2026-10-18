@@ -20,6 +20,9 @@ public class OuttakeSubsystem extends SubsystemBase {
   private final TalonFX m_indexer = new TalonFX(kIndexerId);
 
   private final VelocityVoltage m_velocityRequest = new VelocityVoltage(1);
+  // The feeder has its own request. Sharing one object with the shooter would let the feeder
+  // speed overwrite the shooter speed if both are set in the same cycle.
+  private final VelocityVoltage m_indexerRequest = new VelocityVoltage(1);
 
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
@@ -29,6 +32,27 @@ public class OuttakeSubsystem extends SubsystemBase {
     m_shooterLeader.getConfigurator().apply(shooterGains);
     m_shooterFollower.getConfigurator().apply(shooterGains);
     m_indexer.getConfigurator().apply(shooterGains);
+
+    // Ask the leader for a fresh speed often enough that "are we at RPM yet?" is not a stale number.
+    m_shooterLeader.getVelocity().setUpdateFrequency(50);
+  }
+
+  /**
+   * Spin the shooter at an exact speed.
+   *
+   * <p>{@code rpm} is rotations per minute, which is the unit people tune shots in. The motor
+   * controller wants rotations per second, so this divides by 60. The follower copies the leader
+   * so both wheels match.
+   */
+  public void setShooterRpm(double rpm) {
+    double rotationsPerSecond = rpm / 60.0;
+    m_shooterLeader.setControl(m_velocityRequest.withVelocity(rotationsPerSecond));
+    m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
+  }
+
+  /** Measured shooter speed, in rotations per minute. */
+  public double getShooterRpm() {
+    return m_shooterLeader.getVelocity().getValueAsDouble() * 60.0;
   }
 
   /** Spin the shooter leader. The follower copies it. */
@@ -37,14 +61,14 @@ public class OuttakeSubsystem extends SubsystemBase {
     m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
   }
 
-  /** Spin the feeder forward. */
+  /** Spin the feeder forward. This is what pushes a ball into the shooter. */
   public void index() {
-    m_indexer.setControl(m_velocityRequest.withVelocity(kShooterVelocityRps));
+    m_indexer.setControl(m_indexerRequest.withVelocity(kShooterVelocityRps));
   }
 
   /** Spin the feeder backward. */
   public void reverseIndex() {
-    m_indexer.setControl(m_velocityRequest.withVelocity(-kShooterVelocityRps));
+    m_indexer.setControl(m_indexerRequest.withVelocity(-kShooterVelocityRps));
   }
 
   /** Spin the shooter at half speed and the feeder at a quarter speed. */
@@ -52,7 +76,7 @@ public class OuttakeSubsystem extends SubsystemBase {
     m_shooterLeader.setControl(
         m_velocityRequest.withVelocity(kShooterVelocityRps * kShooterSlowScale));
     m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
-    m_indexer.setControl(m_velocityRequest.withVelocity(kShooterVelocityRps * kIndexerSlowScale));
+    m_indexer.setControl(m_indexerRequest.withVelocity(kShooterVelocityRps * kIndexerSlowScale));
   }
 
   public void stopShooter() {

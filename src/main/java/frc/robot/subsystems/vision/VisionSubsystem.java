@@ -23,11 +23,14 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.Constants.Score;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /**
@@ -84,6 +87,19 @@ public class VisionSubsystem extends SubsystemBase {
       boolean multiTag,
       double ambiguity) {}
 
+  /**
+   * One look at our alliance's hub tag. {@code yawDegrees} is how far the tag sits from the center
+   * of the picture: positive is to the right. {@code distanceMeters} is the floor distance from
+   * the robot center to that tag, or not-a-number if the camera could not measure it.
+   *
+   * @param tagId the AprilTag id. Red hub tags are 9 and 10. Blue hub tags are 25 and 26
+   * @param yawDegrees degrees from the crosshair, positive to the right
+   * @param distanceMeters floor distance in meters, or not-a-number when it could not be measured
+   * @param timestampSeconds when the robot code last saw this tag, on the RoboRIO clock
+   */
+  public record HubSighting(
+      int tagId, double yawDegrees, double distanceMeters, double timestampSeconds) {}
+
   private final CommandSwerveDrivetrain drivetrain;
 
   // NetworkTables client. The name must match the camera nickname in the PhotonVision dashboard,
@@ -105,6 +121,11 @@ public class VisionSubsystem extends SubsystemBase {
   // even if later pictures are rejected.
   private Optional<VisionMeasurement> latestMeasurement = Optional.empty();
   private String rejectReason = "rejected";
+
+  // The last time the newest camera picture contained our hub tag. Kept after a missed frame so
+  // the shooter does not pulse off. getHubSighting() drops it once it is too old.
+  private Optional<HubSighting> latestHub = Optional.empty();
+  private String hubStatus = "no tag";
 
   /** Creates a new VisionSubsystem. */
   public VisionSubsystem(CommandSwerveDrivetrain drivetrain) {
@@ -144,6 +165,25 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
+   * Our hub AprilTag from the newest picture that contained one. Empty when the driver station has
+   * no alliance, the tag has not been seen, or the last sighting is older than
+   * {@link frc.robot.Constants.Constants.Score#kMaxSightingAgeSeconds}.
+   *
+   * <p>The two tags on our hub both count. If both are in the picture, this is the one closest to
+   * the center, because that is the face we are looking at. The other alliance's tags are ignored.
+   */
+  public Optional<HubSighting> getHubSighting() {
+    if (latestHub.isEmpty()) {
+      return Optional.empty();
+    }
+    double age = Timer.getFPGATimestamp() - latestHub.get().timestampSeconds();
+    if (age > Score.kMaxSightingAgeSeconds) {
+      return Optional.empty();
+    }
+    return latestHub;
+  }
+
+  /**
    * Runs every robot cycle. Reads whatever pictures the Limelight has finished since last time,
    * estimates a pose for each one, and fuses the ones that look trustworthy.
    */
@@ -155,6 +195,7 @@ public class VisionSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Vision/Connected", connected);
     if (!connected) {
       publishStatus("disconnected", 0, false, 0);
+      publishHub();
       return;
     }
 
@@ -164,8 +205,12 @@ public class VisionSubsystem extends SubsystemBase {
     if (unreadResults.isEmpty()) {
       // Not a failure. The camera is just slower than the 50 Hz robot loop.
       SmartDashboard.putString("Vision/Status", "no new frames");
+      publishHub();
       return;
     }
+
+    // Aiming uses only the newest picture. Older pictures in this batch already happened.
+    rememberHubTag(unreadResults.get(unreadResults.size() - 1));
 
     String status = "no targets";
     int tagCount = 0;
@@ -218,6 +263,86 @@ public class VisionSubsystem extends SubsystemBase {
     }
 
     publishStatus(status, tagCount, multiTag, ambiguity);
+    publishHub();
+  }
+
+  /**
+   * Saves our hub tag out of this picture, if one is there. This does not have to be a picture we
+   * trusted for odometry. A single tag can be too messy to move the pose estimate and still be
+   * good enough to tell us which way to turn.
+   */
+  private void rememberHubTag(PhotonPipelineResult result) {
+    if (DriverStation.getAlliance().isEmpty()) {
+      hubStatus = "no alliance";
+      return;
+    }
+    if (!result.hasTargets()) {
+      hubStatus = "tag not in view";
+      return;
+    }
+
+    PhotonTrackedTarget best = null;
+    boolean sawAmbiguousHubTag = false;
+    for (var target : result.getTargets()) {
+      if (!isAllianceHubTag(target.getFiducialId())) {
+        continue;
+      }
+      // A high ambiguity means this tag can be solved in two places. Turning toward the wrong
+      // one would aim us away from the hub. Unknown ambiguity (a negative number) is kept.
+      double ambiguity = target.getPoseAmbiguity();
+      if (ambiguity > MAX_SINGLE_TAG_AMBIGUITY) {
+        sawAmbiguousHubTag = true;
+        continue;
+      }
+      if (best == null || Math.abs(target.getYaw()) < Math.abs(best.getYaw())) {
+        best = target;
+      }
+    }
+
+    if (best == null) {
+      hubStatus = sawAmbiguousHubTag ? "tag too ambiguous" : "tag not in view";
+      return;
+    }
+
+    latestHub =
+        Optional.of(
+            new HubSighting(
+                best.getFiducialId(),
+                best.getYaw(),
+                HubMath.distanceMeters(best),
+                Timer.getFPGATimestamp()));
+    hubStatus = "tracking";
+  }
+
+  /** True for the two hub tags on our alliance. The other alliance's hub is not a target. */
+  private static boolean isAllianceHubTag(int fiducialId) {
+    Alliance alliance = DriverStation.getAlliance().orElse(null);
+    if (alliance == Alliance.Red) {
+      return fiducialId == RED_HUB_FIDUCIAL_L || fiducialId == RED_HUB_FIDUCIAL_R;
+    }
+    if (alliance == Alliance.Blue) {
+      return fiducialId == BLUE_HUB_FIDUCIAL_L || fiducialId == BLUE_HUB_FIDUCIAL_R;
+    }
+    return false;
+  }
+
+  /** Mirrors the hub sighting the score command is allowed to use. */
+  private void publishHub() {
+    Optional<HubSighting> hub = getHubSighting();
+    // "tracking" is only true while the sighting is young enough to shoot with. After that the
+    // picture is still the last one we saw, but it is too old to use.
+    String status = hubStatus;
+    if (hub.isEmpty() && "tracking".equals(hubStatus)) {
+      status = "stale";
+    }
+    SmartDashboard.putString("Vision/HubStatus", status);
+    SmartDashboard.putBoolean("Vision/HubVisible", hub.isPresent());
+    hub.ifPresent(
+        sighting -> {
+          SmartDashboard.putNumber("Vision/HubTagId", sighting.tagId());
+          SmartDashboard.putNumber("Vision/HubYawDegrees", sighting.yawDegrees());
+          SmartDashboard.putNumber("Vision/HubDistanceMeters", sighting.distanceMeters());
+        });
   }
 
   /**

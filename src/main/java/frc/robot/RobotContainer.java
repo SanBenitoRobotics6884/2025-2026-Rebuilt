@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants.TunerConstants;
+import frc.robot.commands.ScoreHubCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
@@ -154,8 +155,18 @@ public class RobotContainer {
     controller.a().whileTrue(m_intake.reverseIntakeCommand())
         .onFalse(m_intake.stopRollersCommand());
 
-    controller.rightTrigger().whileTrue(m_outtake.shootCommand())
-        .onFalse(m_outtake.stopShooterCommand());
+    // Turn toward our hub AprilTag, spin the shooter for the measured distance, and feed a ball
+    // only once the wheels reach that RPM. Releasing the trigger stops the shooter and the feeder.
+    // The driver's left stick still drives.
+    controller.rightTrigger().whileTrue(
+        new ScoreHubCommand(
+            drivetrain,
+            m_outtake,
+            vision,
+            m_driverController,
+            maxSpeed,
+            maxAngularRate,
+            slowSpeed));
     controller.b().whileTrue(m_outtake.indexCommand())
         .onFalse(m_outtake.stopIndexerCommand());
     controller.x().whileTrue(m_outtake.reverseIndexCommand())

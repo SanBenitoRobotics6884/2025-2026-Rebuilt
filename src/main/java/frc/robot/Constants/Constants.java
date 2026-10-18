@@ -186,6 +186,60 @@ public final class Constants {
     public static final double kIndexerSlowScale = 0.25;
   }
 
+  /**
+   * Knobs for scoring on the hub while the right trigger is held.
+   *
+   * <p>The robot turns toward our hub AprilTag and measures how far away that tag is. That
+   * distance picks the shooter RPM. The wheels take time to get there, so a ball is not fed
+   * until the measured speed reaches that RPM. The robot does not have to drive to a special
+   * distance first.
+   *
+   * <p>The two distance/RPM pairs define a straight line. A distance between them, closer than
+   * the close shot, or farther than the far shot all use that same line. Time a shot at each
+   * distance on the field, write down the RPM that scored, and replace these numbers.
+   */
+  public static final class Score {
+    /**
+     * The yaw we treat as "centered," in degrees. 0 means the tag should sit on the crosshair.
+     * A positive number means the robot stops turning with the tag that far to the right of the
+     * crosshair. Use this when the shooter does not point the same direction as the camera.
+     */
+    public static final double kAimOffsetDegrees = 0.0;
+
+    /**
+     * How hard we turn toward the tag. The unit is "radians per second of turning, per radian the
+     * tag is off center." Higher aims faster. Too high and the robot swings past the tag and
+     * wobbles. Too low and it aims slowly.
+     */
+    public static final double kTurnP = 5.0;
+
+    /**
+     * Fastest shooter command we will send, in rotations per minute. This is a motor limit. A
+     * real distance past the far tune point still uses the line above, until it would ask for
+     * more than this.
+     */
+    public static final double kMaxShooterRpm = 6000.0;
+
+    /** A tuned close shot. Distance is meters along the floor, from the robot center to the tag. */
+    public static final double kCloseDistanceMeters = 1.5;
+
+    /** Shooter speed, in rotations per minute, that scored from {@link #kCloseDistanceMeters}. */
+    public static final double kCloseRpm = 2200.0;
+
+    /** A tuned far shot. */
+    public static final double kFarDistanceMeters = 3.5;
+
+    /** Shooter speed, in rotations per minute, that scored from {@link #kFarDistanceMeters}. */
+    public static final double kFarRpm = 3800.0;
+
+    /**
+     * How long we keep using the last hub picture after the camera misses a frame. The Limelight
+     * is slower than the robot loop, so throwing the picture away immediately would pulse the
+     * shooter off and on. A quarter of a second covers a few missed frames.
+     */
+    public static final double kMaxSightingAgeSeconds = 0.25;
+  }
+
   public static final class OperatorConstants {
     public static final double kSlowDriveScale = 0.5;
 
