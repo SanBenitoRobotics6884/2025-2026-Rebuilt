@@ -46,6 +46,8 @@ stallSeconds, timeoutSeconds, minTravelRotations, backoffRotations
 
 The tests build that config with the same numbers as `Constants.Intake` (`-3 V`, `35 A`, `0.5 rps`, `0.3 s`, `0.15 s`, `15 s`, `10 rot`, `1 rot`). Change the constants and update `config()` in the test, or construct the harness with `Config.intake()` when the case should follow the robot.
 
+Each screw Talon also has a firmware current cap: `40 A` stator and `30 A` supply (`kStatorCurrentLimitAmps`, `kSupplyCurrentLimitAmps`). Stator current is the torque. The stator cap has to stay above the `35 A` stall threshold. The Talon clamps on the cap, and a clamp that never crosses `35 A` would never look like a hard stop.
+
 ## Script a sweep
 
 `HardStop` is an encoder reading in rotations and whether the limit switch is pressed at that end. Pressed means that end is fully in.
@@ -133,6 +135,7 @@ After the first stop, the voltage on that sample is still the inward voltage (`-
 | `secondSeekGetsItsOwnTimeout` | The first stop does not use up the second direction's timeout. |
 | `stallDuringInrushDoesNotCount` | A spike inside the first 0.3 s is ignored, and a later sweep still finishes. |
 | `secondStallWaitsUntilTheScrewHasMoved` | The second stop does not count until the screw has moved. |
+| `currentAtTheStatorCapStillCountsAsAHardStop` | 40 A, the firmware torque cap, still trips the 35 A detector. |
 | `currentAndVelocityAtTheThresholdAreNotAStall` | 35 A or 0.5 rps exactly is not a stop. |
 | `reversingVoltageIsAppliedOnTheStepAfterTheFirstStop` | Polarity flips on the sample after the first stop. |
 | `finishedSweepIsLeftAloneUntilForced` | `start(false)` keeps the old targets. A later `sweep` replaces them. |
@@ -149,6 +152,7 @@ The running robot prints the same sweep on SmartDashboard:
 | `Intake/CalibrationPhase` | `IDLE`, `SEEK_FIRST`, `SEEK_SECOND`, `DONE`, or `FAILED` |
 | `Intake/Calibrated` | Extend and retract are allowed |
 | `Intake/ScrewCurrentAmps` | Higher of the two stator currents |
+| `Intake/ScrewStatorLimitAmps` | Torque cap applied to each extension screw |
 | `Intake/ScrewPositionRotations` | Left screw, after the in-stop has been shifted to 0 |
 | `Intake/ExtendPositionRotations` | Left-screw target just inside the outer stop |
 | `Intake/RetractPositionRotations` | Left-screw target just inside the fully-in stop |

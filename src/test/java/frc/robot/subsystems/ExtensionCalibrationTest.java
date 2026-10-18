@@ -162,6 +162,19 @@ class ExtensionCalibrationTest {
   }
 
   @Test
+  void currentAtTheStatorCapStillCountsAsAHardStop() {
+    // The Talon clamps each screw at Constants.Intake.kStatorCurrentLimitAmps (40 A). Detection
+    // uses 35 A, so a screw sitting on that cap is still a hard stop.
+    ExtensionCalibrationHarness harness = harness();
+    harness.start(true);
+    harness.hold(0.28, 4.0, 3.0, 5.0, false);
+    harness.holdUntilPhaseChange(0.3, 4.0, 0.0, 40.0, true);
+
+    assertEquals(Phase.SEEK_SECOND, harness.calibrator().phase(), harness.trace());
+    assertFalse(harness.calibrator().isFailed(), harness.trace());
+  }
+
+  @Test
   void currentAndVelocityAtTheThresholdAreNotAStall() {
     ExtensionCalibrationHarness harness = harness();
     harness.start(true);

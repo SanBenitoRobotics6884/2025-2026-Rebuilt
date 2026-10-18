@@ -147,6 +147,21 @@ public final class Constants {
     /** Stator current above this, while the screw is barely moving, means a hard stop. */
     public static final double kStallCurrentAmps = 35.0;
 
+    /**
+     * Torque cap on each extension screw, in amps. Stator current is the current that makes torque,
+     * so this is what keeps a jam from winding the linear actuator up. It has to stay above
+     * {@link #kStallCurrentAmps}: the Talon clamps at this value, and a clamp that never exceeds the
+     * stall threshold would look like the screws were still moving.
+     */
+    public static final double kStatorCurrentLimitAmps = 40.0;
+
+    /**
+     * Battery-current cap on each extension screw, in amps. Calibration drives at
+     * {@link #kInwardVoltage}, where a stator-limited stall draws about a quarter of
+     * {@link #kStatorCurrentLimitAmps} from a 12 V bus, so this cap does not hide that stall.
+     */
+    public static final double kSupplyCurrentLimitAmps = 30.0;
+
     /** Below this speed, in rotations per second, the screw is treated as stopped. */
     public static final double kStallVelocityRps = 0.5;
 

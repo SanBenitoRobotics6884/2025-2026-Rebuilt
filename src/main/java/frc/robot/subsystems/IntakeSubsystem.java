@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -62,6 +63,8 @@ public class IntakeSubsystem extends SubsystemBase {
 
     m_leftScrew.getConfigurator().apply(gains);
     m_rightScrew.getConfigurator().apply(gains);
+    applyScrewCurrentLimit(m_leftScrew);
+    applyScrewCurrentLimit(m_rightScrew);
     m_rightScrew.setControl(
         new Follower(m_leftScrew.getDeviceID(), MotorAlignmentValue.Aligned));
 
@@ -102,6 +105,7 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Intake/Calibrated", m_calibrator.isCalibrated());
     SmartDashboard.putString("Intake/CalibrationPhase", m_calibrator.phase().name());
     SmartDashboard.putNumber("Intake/ScrewCurrentAmps", screwCurrentAmps());
+    SmartDashboard.putNumber("Intake/ScrewStatorLimitAmps", kStatorCurrentLimitAmps);
     SmartDashboard.putNumber(
         "Intake/ScrewPositionRotations", m_leftScrew.getPosition().getValueAsDouble());
     SmartDashboard.putNumber(
@@ -314,6 +318,27 @@ public class IntakeSubsystem extends SubsystemBase {
       return;
     }
     stopScrews();
+  }
+
+  /**
+   * Caps torque and battery current on one extension screw. The follower still produces its own
+   * torque, so both screws get the same limit.
+   */
+  private void applyScrewCurrentLimit(TalonFX screw) {
+    CurrentLimitsConfigs limits =
+        new CurrentLimitsConfigs()
+            .withStatorCurrentLimit(kStatorCurrentLimitAmps)
+            .withStatorCurrentLimitEnable(true)
+            .withSupplyCurrentLimit(kSupplyCurrentLimitAmps)
+            .withSupplyCurrentLimitEnable(true)
+            .withSupplyCurrentLowerLimit(kSupplyCurrentLimitAmps)
+            .withSupplyCurrentLowerTime(0.0);
+    StatusCode status = screw.getConfigurator().apply(limits);
+    if (!status.isOK()) {
+      DriverStation.reportError(
+          "Extension current limit was not applied to TalonFX " + screw.getDeviceID() + ": " + status,
+          false);
+    }
   }
 
   private double screwCurrentAmps() {
