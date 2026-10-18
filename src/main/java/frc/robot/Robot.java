@@ -31,7 +31,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    // Power-up zeros the screw encoder. Save the live position so the next boot can seed it.
+    robotContainer.saveIntakeExtension();
+  }
 
   @Override
   public void disabledPeriodic() {}
@@ -58,8 +61,6 @@ public class Robot extends TimedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(autonomousCommand);
     }
-    // Starting in teleop still needs the screw ends. After auto this no-ops.
-    CommandScheduler.getInstance().schedule(robotContainer.calibrateIntakeCommand());
   }
 
   @Override

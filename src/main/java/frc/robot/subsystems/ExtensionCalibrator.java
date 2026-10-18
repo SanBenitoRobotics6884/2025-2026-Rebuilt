@@ -15,7 +15,8 @@ import static frc.robot.Constants.Constants.Intake.kStallVelocityRps;
 
 /**
  * Hard-stop sweep for the intake screws. The encoder reads 0 at power-up no matter where the
- * extension actually is, so extend and retract stay put until both ends have been found.
+ * extension actually is. A saved position can stand in for a new sweep; otherwise extend and
+ * retract stay put until both ends have been found.
  *
  * <p>Each {@link #step(Sample)} takes one reading. The clock is whatever the caller passes in, so
  * the robot can use FPGA time and a test can step in milliseconds. Voltage, the limit switch, and

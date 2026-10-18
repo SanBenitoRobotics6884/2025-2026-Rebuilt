@@ -179,6 +179,9 @@ logs/
 # Folder that has CTRE Phoenix Sim device config storage
 ctre_sim/
 
+# Intake screw position written on the robot and when simulating
+intake-calibration/
+
 # clangd
 /.cache
 compile_commands.json

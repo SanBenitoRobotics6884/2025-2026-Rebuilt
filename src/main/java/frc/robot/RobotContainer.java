@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -146,6 +145,11 @@ public class RobotContainer {
         .onFalse(m_intake.stopScrewsCommand());
     controller.pov(kPovRight).whileTrue(m_intake.retractCommand())
         .onFalse(m_intake.stopScrewsCommand());
+    // D-pad up sweeps both hard stops and writes the measured extension. Releasing the button
+    // does not cancel the sweep. Teleop only, so the button cannot take the intake during auto.
+    controller.pov(kPovUp)
+        .and(RobotModeTriggers.teleop())
+        .onTrue(m_intake.recalibrateCommand());
     controller.leftTrigger().whileTrue(m_intake.intakeCommand())
         .onFalse(m_intake.stopRollersCommand());
     controller.b().whileTrue(m_intake.runStorageCommand())
@@ -173,24 +177,13 @@ public class RobotContainer {
         .whileFalse(m_outtake.stopIndexerCommand());
   }
 
-  /**
-   * Finds the screw hard stops before any auto step tries to extend or retract. If calibration
-   * fails, the selected auto is skipped.
-   */
   public Command getAutonomousCommand() {
-    Command selected = autoChooser.getSelected();
-    Command calibrate = m_intake.calibrateCommand();
-    if (selected == null) {
-      return calibrate;
-    }
-    return calibrate
-        .andThen(Commands.either(selected, Commands.none(), m_intake::isCalibrated))
-        .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
+    return autoChooser.getSelected();
   }
 
-  /** Finds the screw hard stops when the robot enables in teleop. No-ops if already calibrated. */
-  public Command calibrateIntakeCommand() {
-    return m_intake.calibrateCommand();
+  /** Writes the live screw position so the next power cycle can seed the encoder. */
+  public void saveIntakeExtension() {
+    m_intake.saveMeasuredExtension();
   }
 
   /**

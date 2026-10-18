@@ -167,6 +167,12 @@ public final class Constants {
 
     /** Travel used in simulation, where there is no current spike to measure. */
     public static final double kSimTravelRotations = 70.0;
+
+    /**
+     * Last sweep, stored under the robot's operating directory ({@code /home/lvuser} on the
+     * roboRIO). Deploy overwrites {@code src/main/deploy}, so this file lives outside it.
+     */
+    public static final String kExtensionMemoryFile = "intake-calibration/extension.txt";
   }
 
   public static final class Outtake {

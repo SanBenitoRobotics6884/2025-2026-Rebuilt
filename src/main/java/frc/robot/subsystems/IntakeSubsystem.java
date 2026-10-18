@@ -6,6 +6,10 @@ package frc.robot.subsystems;
 
 import static frc.robot.Constants.Constants.Intake.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.PositionVoltage;
@@ -15,6 +19,7 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -33,6 +38,22 @@ public class IntakeSubsystem extends SubsystemBase {
   private final Timer m_simTimer = new Timer();
   private final ExtensionCalibrator m_calibrator =
       new ExtensionCalibrator(ExtensionCalibrator.Config.intake());
+  private final Path m_extensionMemoryPath =
+      Filesystem.getOperatingDirectory().toPath().resolve(kExtensionMemoryFile);
+
+  /** Skip rewriting the file when the screws were already told to hold this spot. */
+  private static final double kPositionWriteDeadbandRotations = 0.05;
+
+  /**
+   * Encoder readback within this many rotations of the seeded value means {@code setPosition} has
+   * been echoed, so a later measured save will not replace the file with the power-up zero.
+   */
+  private static final double kSeedEchoToleranceRotations = 0.05;
+
+  private double m_savedPositionRotations = Double.NaN;
+  /** Measured saves stay off until the motor echoes the seed, or a command writes a new target. */
+  private boolean m_acceptMeasuredPosition;
+  private boolean m_reportedWriteFailure;
 
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
@@ -51,10 +72,12 @@ public class IntakeSubsystem extends SubsystemBase {
     m_leftScrew.getPosition().setUpdateFrequency(50);
 
     if (RobotBase.isSimulation()) {
+      m_simTimer.start();
+    }
+    if (!restoreExtensionMemory() && RobotBase.isSimulation()) {
       // Simulation has no stator current, so a hard-stop sweep would only time out.
       m_calibrator.assumeCalibrated(
           kHardStopBackoffRotations, kSimTravelRotations - kHardStopBackoffRotations);
-      m_simTimer.start();
     }
 
     SmartDashboard.putData("Intake/Recalibrate", recalibrateCommand());
@@ -85,11 +108,38 @@ public class IntakeSubsystem extends SubsystemBase {
         "Intake/ExtendPositionRotations", m_calibrator.extendPositionRotations());
     SmartDashboard.putNumber(
         "Intake/RetractPositionRotations", m_calibrator.retractPositionRotations());
+    SmartDashboard.putNumber("Intake/SavedPositionRotations", m_savedPositionRotations);
+    if (!m_acceptMeasuredPosition && m_calibrator.isCalibrated()) {
+      var position = m_leftScrew.getPosition();
+      if (position.getStatus() == StatusCode.OK
+          && !Double.isNaN(m_savedPositionRotations)
+          && Math.abs(position.getValueAsDouble() - m_savedPositionRotations)
+              <= kSeedEchoToleranceRotations) {
+        m_acceptMeasuredPosition = true;
+      }
+    }
   }
 
   /**
-   * Drives into both hard stops once per boot. The encoder reads 0 at power-up no matter where the
-   * screws actually are, so extend and retract stay put until this finishes.
+   * Writes the live encoder position when it is safe to trust. Disabled-init calls this so the
+   * next boot matches where the screws stopped. A boot that has not yet heard the seeded position
+   * echoed back leaves the file alone.
+   */
+  public void saveMeasuredExtension() {
+    if (!m_calibrator.isCalibrated() || !m_acceptMeasuredPosition) {
+      return;
+    }
+    var position = m_leftScrew.getPosition();
+    position.refresh();
+    if (position.getStatus() != StatusCode.OK) {
+      return;
+    }
+    rememberPosition(position.getValueAsDouble());
+  }
+
+  /**
+   * Sweeps both hard stops when the screws have no saved position. A restored file counts as
+   * already calibrated, so this command ends immediately.
    */
   public Command calibrateCommand() {
     return buildCalibrateCommand(false);
@@ -105,7 +155,9 @@ public class IntakeSubsystem extends SubsystemBase {
     if (!m_calibrator.isCalibrated()) {
       return;
     }
-    setLeftScrewPosition(m_calibrator.extendPositionRotations());
+    double target = m_calibrator.extendPositionRotations();
+    setLeftScrewPosition(target);
+    rememberPosition(target);
   }
 
   /** Move the screws to the stowed position, just inside the fully-in hard stop. */
@@ -113,7 +165,9 @@ public class IntakeSubsystem extends SubsystemBase {
     if (!m_calibrator.isCalibrated()) {
       return;
     }
-    setLeftScrewPosition(m_calibrator.retractPositionRotations());
+    double target = m_calibrator.retractPositionRotations();
+    setLeftScrewPosition(target);
+    rememberPosition(target);
   }
 
   /** Drive both screws to the same side of the extend setpoint. */
@@ -124,6 +178,7 @@ public class IntakeSubsystem extends SubsystemBase {
     double position = -m_calibrator.extendPositionRotations();
     m_leftScrew.setControl(m_positionRequest.withPosition(position));
     m_rightScrew.setControl(m_positionRequest.withPosition(position));
+    rememberPosition(position);
   }
 
   public void intake() {
@@ -142,10 +197,11 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(-kStorageSpeed);
   }
 
-  /** Stop the linear screws. */
+  /** Stop the linear screws and remember where they actually stopped. */
   public void stopScrews() {
     m_leftScrew.set(0);
     m_rightScrew.set(0);
+    saveMeasuredExtension();
   }
 
   /** Stop the intake roller and the storage roller. */
@@ -211,6 +267,10 @@ public class IntakeSubsystem extends SubsystemBase {
     if (!m_calibrator.start(force, Timer.getFPGATimestamp())) {
       return;
     }
+    // The sweep is about to move the screws, so the old file is no longer where they are.
+    m_savedPositionRotations = Double.NaN;
+    m_acceptMeasuredPosition = false;
+    ExtensionMemory.delete(m_extensionMemoryPath);
     m_rightScrew.setControl(
         new Follower(m_leftScrew.getDeviceID(), MotorAlignmentValue.Aligned));
   }
@@ -234,8 +294,10 @@ public class IntakeSubsystem extends SubsystemBase {
       m_leftScrew.setControl(m_voltageOut.withOutput(action.voltage));
     }
     if (action.zeroEncoder) {
-      m_leftScrew.setPosition(action.encoderLeftRotations);
-      m_rightScrew.setPosition(action.encoderRightRotations);
+      seedEncoder(action.encoderLeftRotations);
+      // Record the position at the hard stop, then retract() below replaces it with the stow
+      // target the screws are told to hold.
+      rememberPosition(action.encoderLeftRotations);
     }
     if (action.holdRetract) {
       // Leave the screws just off whichever stop we finished on, then stow them.
@@ -263,5 +325,64 @@ public class IntakeSubsystem extends SubsystemBase {
   private void setLeftScrewPosition(double leftRotations) {
     m_leftScrew.setControl(m_positionRequest.withPosition(leftRotations));
     m_rightScrew.setControl(m_positionRequest.withPosition(-leftRotations));
+  }
+
+  /**
+   * Seeds both screw encoders in the calibrated frame. The right screw is commanded to the
+   * opposite rotation everywhere else, so its sensor has to start there too.
+   */
+  private void seedEncoder(double leftRotations) {
+    m_leftScrew.setPosition(leftRotations);
+    m_rightScrew.setPosition(-leftRotations);
+  }
+
+  /** @return true when a saved sweep was applied to the calibrator and the encoders */
+  private boolean restoreExtensionMemory() {
+    if (!Files.isRegularFile(m_extensionMemoryPath)) {
+      return false;
+    }
+    var saved = ExtensionMemory.read(m_extensionMemoryPath);
+    if (saved.isEmpty()) {
+      DriverStation.reportError(
+          "Intake extension file could not be read: " + m_extensionMemoryPath, false);
+      return false;
+    }
+    ExtensionMemory.Snapshot snapshot = saved.get();
+    m_calibrator.assumeCalibrated(snapshot.retractRotations, snapshot.extendRotations);
+    seedEncoder(snapshot.positionRotations);
+    m_savedPositionRotations = snapshot.positionRotations;
+    m_acceptMeasuredPosition = false;
+    DriverStation.reportWarning(
+        "Intake extension restored at " + snapshot.positionRotations + " rotations.", false);
+    return true;
+  }
+
+  /** Writes the calibrated ends and this left-screw position. Repeated targets are skipped. */
+  private void rememberPosition(double leftRotations) {
+    if (!m_calibrator.isCalibrated() || !Double.isFinite(leftRotations)) {
+      return;
+    }
+    if (!Double.isNaN(m_savedPositionRotations)
+        && Math.abs(m_savedPositionRotations - leftRotations) < kPositionWriteDeadbandRotations) {
+      return;
+    }
+    boolean wrote =
+        ExtensionMemory.write(
+            m_extensionMemoryPath,
+            new ExtensionMemory.Snapshot(
+                m_calibrator.retractPositionRotations(),
+                m_calibrator.extendPositionRotations(),
+                leftRotations));
+    if (!wrote) {
+      if (!m_reportedWriteFailure) {
+        DriverStation.reportError(
+            "Could not write intake extension file: " + m_extensionMemoryPath, false);
+        m_reportedWriteFailure = true;
+      }
+      return;
+    }
+    m_reportedWriteFailure = false;
+    m_savedPositionRotations = leftRotations;
+    m_acceptMeasuredPosition = true;
   }
 }
