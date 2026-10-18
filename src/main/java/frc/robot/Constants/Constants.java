@@ -184,6 +184,12 @@ public final class Constants {
     public static final double kSimTravelRotations = 70.0;
 
     /**
+     * Saved screw position within this many rotations of the deploy setpoint counts as extended.
+     * A shot that starts there stows the screws and drives them back out when the shot ends.
+     */
+    public static final double kExtendedToleranceRotations = 3.0;
+
+    /**
      * Last sweep, stored under the robot's operating directory ({@code /home/lvuser} on the
      * roboRIO). Deploy overwrites {@code src/main/deploy}, so this file lives outside it.
      */

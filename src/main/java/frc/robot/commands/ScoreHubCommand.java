@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 import frc.robot.subsystems.vision.HubMath;
 import frc.robot.subsystems.vision.VisionSubsystem;
@@ -36,11 +37,14 @@ import frc.robot.subsystems.vision.VisionSubsystem.HubSighting;
  *       ball short.
  * </ol>
  *
- * <p>Releasing the trigger ends the command, which stops the shooter and the feeder.
+ * <p>The extension stows as soon as the trigger is pulled, so the screws are moving in before a
+ * ball is fed. Releasing the trigger stops the shooter and the feeder, and puts the extension
+ * back out if it was deployed when the shot started.
  */
 public class ScoreHubCommand extends Command {
   private final CommandSwerveDrivetrain drivetrain;
   private final OuttakeSubsystem outtake;
+  private final IntakeSubsystem intake;
   private final VisionSubsystem vision;
   private final CommandXboxController driver;
   private final double maxSpeedMetersPerSecond;
@@ -58,6 +62,7 @@ public class ScoreHubCommand extends Command {
   public ScoreHubCommand(
       CommandSwerveDrivetrain drivetrain,
       OuttakeSubsystem outtake,
+      IntakeSubsystem intake,
       VisionSubsystem vision,
       CommandXboxController driver,
       double maxSpeedMetersPerSecond,
@@ -65,6 +70,7 @@ public class ScoreHubCommand extends Command {
       double slowScale) {
     this.drivetrain = drivetrain;
     this.outtake = outtake;
+    this.intake = intake;
     this.vision = vision;
     this.driver = driver;
     this.maxSpeedMetersPerSecond = maxSpeedMetersPerSecond;
@@ -76,11 +82,19 @@ public class ScoreHubCommand extends Command {
     // Slow mode also wants the drivetrain. Cancel that incoming command instead of letting it
     // cancel this shot. This command reads the bumper itself and slows down.
     withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
-    addRequirements(drivetrain, outtake);
+    addRequirements(drivetrain, outtake, intake);
+  }
+
+  @Override
+  public void initialize() {
+    // Start stowing immediately, during the spin-up, so the screws are moving in before a ball
+    // is fed. The first call remembers whether we were deployed.
+    intake.retractForShot();
   }
 
   @Override
   public void execute() {
+    intake.retractForShot();
     // Left stick: forward is -Y and left is -X, matching the normal drive command.
     // Left bumper still means slow mode while we are aiming.
     double speed = driveSpeed();
@@ -138,6 +152,7 @@ public class ScoreHubCommand extends Command {
   public void end(boolean interrupted) {
     outtake.stopShooter();
     outtake.stopIndexer();
+    intake.restoreAfterShot();
     SmartDashboard.putBoolean("Score/Feeding", false);
   }
 

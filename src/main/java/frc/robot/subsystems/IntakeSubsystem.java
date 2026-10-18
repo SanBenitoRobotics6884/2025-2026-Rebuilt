@@ -56,6 +56,11 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean m_acceptMeasuredPosition;
   private boolean m_reportedWriteFailure;
 
+  /** True from the first retract of a shot until that shot puts the screws back. */
+  private boolean m_holdingShotRetraction;
+  /** Latched on the first retract of a shot. True only when that shot started deployed. */
+  private boolean m_restoreExtensionAfterShot;
+
   /** Creates a new IntakeSubsystem. */
   public IntakeSubsystem() {
     var gains = new Slot0Configs();
@@ -113,6 +118,8 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putNumber(
         "Intake/RetractPositionRotations", m_calibrator.retractPositionRotations());
     SmartDashboard.putNumber("Intake/SavedPositionRotations", m_savedPositionRotations);
+    SmartDashboard.putBoolean("Intake/Extended", isExtended());
+    SmartDashboard.putBoolean("Intake/RestoreAfterShot", m_restoreExtensionAfterShot);
     if (!m_acceptMeasuredPosition && m_calibrator.isCalibrated()) {
       var position = m_leftScrew.getPosition();
       if (position.getStatus() == StatusCode.OK
@@ -172,6 +179,43 @@ public class IntakeSubsystem extends SubsystemBase {
     double target = m_calibrator.retractPositionRotations();
     setLeftScrewPosition(target);
     rememberPosition(target);
+  }
+
+  /**
+   * True when the screws were last told to hold the deployed setpoint. A shot reads this once,
+   * before it stows them, so it can deploy again only if the shot started there.
+   */
+  public boolean isExtended() {
+    if (!m_calibrator.isCalibrated() || Double.isNaN(m_savedPositionRotations)) {
+      return false;
+    }
+    return Math.abs(m_savedPositionRotations - m_calibrator.extendPositionRotations())
+        <= kExtendedToleranceRotations;
+  }
+
+  /**
+   * Stow the screws for a shot. The first call remembers {@link #isExtended()} so a later
+   * {@link #restoreAfterShot()} can deploy again. Further calls only keep holding the stow.
+   */
+  public void retractForShot() {
+    if (!m_holdingShotRetraction) {
+      m_restoreExtensionAfterShot = isExtended();
+      m_holdingShotRetraction = true;
+    }
+    retract();
+  }
+
+  /** Deploy the screws again when the shot that stowed them had started extended. */
+  public void restoreAfterShot() {
+    if (!m_holdingShotRetraction) {
+      return;
+    }
+    m_holdingShotRetraction = false;
+    boolean restore = m_restoreExtensionAfterShot;
+    m_restoreExtensionAfterShot = false;
+    if (restore) {
+      extend();
+    }
   }
 
   /** Drive both screws to the same side of the extend setpoint. */

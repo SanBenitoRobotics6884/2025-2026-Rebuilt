@@ -71,8 +71,15 @@ public class RobotContainer {
     NamedCommands.registerCommand("stopRollersCommand", m_intake.stopStorageCommand());
     NamedCommands.registerCommand("runIndexCommand", m_outtake.startIndexerCommand());
     NamedCommands.registerCommand("stopIndexCommand", m_outtake.stopIndexerCommand());
-    NamedCommands.registerCommand("runOuttakecommand", m_outtake.startShooterCommand());
-    NamedCommands.registerCommand("stopOuttakeCommand", m_outtake.stopShooterCommand());
+    // Stow the extension when the shooter starts, and put it back on stop if that shot began
+    // deployed. The wait already in the autos is the time the screws have to get in before a ball
+    // is fed.
+    NamedCommands.registerCommand(
+        "runOuttakecommand",
+        m_intake.runOnce(m_intake::retractForShot).andThen(m_outtake.startShooterCommand()));
+    NamedCommands.registerCommand(
+        "stopOuttakeCommand",
+        m_outtake.stopShooterCommand().andThen(m_intake.runOnce(m_intake::restoreAfterShot)));
 
     drivetrain.configurePathPlanner();
 
@@ -160,12 +167,13 @@ public class RobotContainer {
         .onFalse(m_intake.stopRollersCommand());
 
     // Turn toward our hub AprilTag, spin the shooter for the measured distance, and feed a ball
-    // only once the wheels reach that RPM. Releasing the trigger stops the shooter and the feeder.
-    // The driver's left stick still drives.
+    // only once the wheels reach that RPM. The extension stows for the shot and, if it started
+    // deployed, goes back out when the trigger is released. The driver's left stick still drives.
     controller.rightTrigger().whileTrue(
         new ScoreHubCommand(
             drivetrain,
             m_outtake,
+            m_intake,
             vision,
             m_driverController,
             maxSpeed,
