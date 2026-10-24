@@ -40,7 +40,7 @@ import frc.robot.subsystems.vision.VisionSusbsytem;
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double slowSpeed = SLOW_SWERVE_SPEED; // Reduce speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(1.15).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -166,7 +166,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> 
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed * slowSpeed) // Conley should play pressure with Jerry.
                     .withVelocityY(-joystick.getLeftX() * MaxSpeed * slowSpeed)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate * slowSpeed) // JERRY IS A FAT GAY CHUD!
+                    .withRotationalRate(joystick.getRightX() * MaxAngularRate * slowSpeed) // JERRY IS A FAT GAY CHUD!
             )
         );
         // Note that X is defined as forward according to WPILib convention,
@@ -177,7 +177,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                    .withRotationalRate(joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 

@@ -7,10 +7,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Unit;
 
 public class Constants {
-  public class Vision {
-    public static final String CAMERA_NAME = "HD_USB_CAMERA";
-  }
-  
+
   public class Intake {
     public static final int LIMIT_SWITCH_STORAGE_DIO = 0;
 
@@ -62,6 +59,7 @@ public class Constants {
   }
 
   public class Vision {
+    public static final String CAMERA_NAME = "USB_CAMERA";
     // VISION CAMERA POSITION // RELATIVE TO ROBOT ORIGIN //
     public static final double CAM_XPOSE = Units.inchesToMeters(11.25);
     public static final double CAM_YPOSE = Units.inchesToMeters(5);

@@ -110,7 +110,7 @@ public class OuttakeSubsystem extends SubsystemBase {
      * The method will shoot the ball, but takes into account the distance of the select AprilTag and decide speed from there.
      * Plans to use Linear Interpolation for this with PhotonVision.
      */
-    m_outtakeMotor.set(interpolateDistance(aprilTagDist));
+    m_alyssaMotor.set(interpolateDistance(aprilTagDist));
   }
 
   public double interpolateDistance(double distance) {
