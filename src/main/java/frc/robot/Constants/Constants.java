@@ -129,8 +129,8 @@ public final class Constants {
     public static final int kIntakeRollerId = 10;
     public static final int kStorageRollerId = 40;
 
-    /** CAN ID of the CANdi with the extension limit sensors. Set this to the ID in Phoenix Tuner. */
-    public static final int kCandiId = 15;
+    /** CAN ID of the CANdi with the extension limit sensors, on the roboRIO CAN bus. */
+    public static final int kCandiId = 11;
 
     /** Duty cycle for the intake roller. Negative pulls a game piece in. */
     public static final double kIntakeSpeed = -0.4;
