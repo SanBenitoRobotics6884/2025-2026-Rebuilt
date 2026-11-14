@@ -187,6 +187,11 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
+  /** Lead-screw sync check. {@code Robot} runs this every 10 ms. */
+  public void intakeSyncLoop() {
+    m_intake.syncLoop();
+  }
+
   /** Stops any extension move so enabling again never resumes an old one. */
   public void stopIntakeExtension() {
     m_intake.stopExtension();

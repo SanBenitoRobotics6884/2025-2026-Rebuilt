@@ -9,12 +9,16 @@ import static frc.robot.Constants.Constants.Intake.*;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANdi;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -37,10 +41,32 @@ public class IntakeSubsystem extends SubsystemBase {
   private final CANdi m_candi = new CANdi(kCandiId);
   private final StatusSignal<Boolean> m_retractedSignal = m_candi.getS1Closed();
   private final StatusSignal<Boolean> m_extendedSignal = m_candi.getS2Closed();
+  private final StatusSignal<Angle> m_leftPosSignal = m_leftScrew.getPosition();
+  private final StatusSignal<Angle> m_rightPosSignal = m_rightScrew.getPosition();
 
-  private final VoltageOut m_voltageOut = new VoltageOut(0);
+  private final PositionVoltage m_leftRequest = new PositionVoltage(0).withSlot(0);
+  private final PositionVoltage m_rightRequest = new PositionVoltage(0).withSlot(0);
+  private final NeutralOut m_neutral = new NeutralOut();
+
   private final ExtensionStateMachine m_extension =
-      new ExtensionStateMachine(kExtensionTimeoutSeconds);
+      new ExtensionStateMachine(
+          new ScrewSync.Config(
+              kSyncSpeedRps,
+              kFollowToleranceRot,
+              kSyncFaultRot,
+              kTrackingFaultRot,
+              kFaultDebounceSeconds,
+              kNoProgressSeconds,
+              -kTravelMarginRot,
+              kTravelRotations + kTravelMarginRot),
+          kExtensionTimeoutSeconds);
+
+  // Latest readings, refreshed by syncLoop().
+  private double m_leftPos;
+  private double m_rightPos;
+  private boolean m_retracted;
+  private boolean m_extended;
+  private boolean m_sensorsOk;
 
   /** True from the first retract of a shot until that shot puts the screws back. */
   private boolean m_holdingShotRetraction;
@@ -49,77 +75,117 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Creates a new IntakeSubsystem. Every boot starts in {@link State#REST}. */
   public IntakeSubsystem() {
-    applyScrewCurrentLimit(m_leftScrew);
-    applyScrewCurrentLimit(m_rightScrew);
-    m_rightScrew.setControl(new Follower(m_leftScrew.getDeviceID(), kRightScrewAlignment));
+    InvertedValue rightInverted =
+        kRightScrewAlignment == MotorAlignmentValue.Opposed ? flip(kLeftScrewInverted) : kLeftScrewInverted;
+    configureScrew(m_leftScrew, kLeftScrewInverted);
+    configureScrew(m_rightScrew, rightInverted);
 
-    // Read the sensors faster than the 20 ms loop so a trigger is never a whole loop late.
-    BaseStatusSignal.setUpdateFrequencyForAll(100, m_retractedSignal, m_extendedSignal);
+    // Fresh readings for every 10 ms check.
+    BaseStatusSignal.setUpdateFrequencyForAll(
+        100, m_leftPosSignal, m_rightPosSignal, m_retractedSignal, m_extendedSignal);
 
+    // Both encoders start equal, so the screws are compared turn for turn from power-up. The first
+    // retract that reaches S1 sets both to 0 again.
+    zeroScrews();
     stopScrews();
   }
 
   /** S1: the intake is fully retracted. */
   public boolean isRetracted() {
-    return m_retractedSignal.getValue();
+    return m_retracted;
   }
 
   /** S2: the intake is fully extended. */
   public boolean isExtended() {
-    return m_extendedSignal.getValue();
+    return m_extended;
   }
 
   public State getExtensionState() {
     return m_extension.state();
   }
 
-  /** Runs every 20 ms robot loop: read the sensors, step the state machine, drive the screws. */
-  @Override
-  public void periodic() {
-    BaseStatusSignal.refreshAll(m_retractedSignal, m_extendedSignal);
-    boolean retracted = isRetracted();
-    boolean extended = isExtended();
+  /**
+   * The lead-screw sync check. {@code Robot} runs this every {@link
+   * frc.robot.Constants.Constants.Intake#kSyncPeriodSeconds} (10 ms). It reads both screw
+   * encoders and both limit sensors, checks that each screw really turned as far as it was told,
+   * and then either moves both on together or stops both.
+   */
+  public void syncLoop() {
+    readSensors();
+    double now = Timer.getFPGATimestamp();
 
     State before = m_extension.state();
-    State state = m_extension.update(retracted, extended, Timer.getFPGATimestamp());
-    if (before != State.REST && state == State.REST && m_extension.lastMoveTimedOut()) {
+    State state;
+    if (m_sensorsOk) {
+      state = m_extension.update(m_leftPos, m_rightPos, m_retracted, m_extended, now);
+    } else {
+      // No trustworthy encoder or sensor data: do not move the screws on a guess.
+      m_extension.stop();
+      state = m_extension.state();
+    }
+
+    if (state == State.FAULT && before != State.FAULT) {
       DriverStation.reportError(
-          "Intake " + before.name().toLowerCase() + " timed out after "
-              + kExtensionTimeoutSeconds + " s without its limit sensor. Check the CANdi wiring.",
+          "Intake screws stopped, " + m_extension.fault() + ": " + m_extension.faultDetail()
+              + ". Press extend or retract to re-align them.",
           false);
+    } else if (before != State.REST && state == State.REST) {
+      if (m_extension.lastMoveTimedOut()) {
+        DriverStation.reportError(
+            "Intake move timed out after " + kExtensionTimeoutSeconds + " s without its limit sensor.",
+            false);
+      } else if (m_extension.lastMoveHitSoftLimit()) {
+        DriverStation.reportWarning(
+            "Intake reached the travel limit without its CANdi sensor triggering. Check the sensor"
+                + " and kTravelRotations.",
+            false);
+      }
+      if (before == State.RETRACTING && m_retracted) {
+        zeroScrews();
+      }
     }
 
-    switch (state) {
-      case EXTENDING:
-        m_leftScrew.setControl(m_voltageOut.withOutput(kExtendVoltage));
-        break;
-      case RETRACTING:
-        m_leftScrew.setControl(m_voltageOut.withOutput(kRetractVoltage));
-        break;
-      case REST:
-      default:
-        stopScrews();
-        break;
+    if (m_extension.isDriving()) {
+      m_leftScrew.setControl(
+          m_leftRequest
+              .withPosition(m_extension.leftTarget())
+              .withVelocity(m_extension.leftVelocity()));
+      m_rightScrew.setControl(
+          m_rightRequest
+              .withPosition(m_extension.rightTarget())
+              .withVelocity(m_extension.rightVelocity()));
+    } else {
+      stopScrews();
     }
+  }
 
-    SmartDashboard.putString("Intake/State", state.name());
-    SmartDashboard.putBoolean("Intake/RetractedLimit", retracted);
-    SmartDashboard.putBoolean("Intake/ExtendedLimit", extended);
-    SmartDashboard.putBoolean("Intake/CANdiConnected", m_retractedSignal.getStatus().isOK());
+  /** Dashboard only. The control work happens in {@link #syncLoop()}. */
+  @Override
+  public void periodic() {
+    SmartDashboard.putString("Intake/State", m_extension.state().name());
+    SmartDashboard.putString("Intake/Fault", m_extension.fault().name());
+    SmartDashboard.putNumber("Intake/LeftPos", m_leftPos);
+    SmartDashboard.putNumber("Intake/RightPos", m_rightPos);
+    SmartDashboard.putNumber("Intake/Apart", m_leftPos - m_rightPos);
+    SmartDashboard.putNumber("Intake/LeftTarget", m_extension.leftTarget());
+    SmartDashboard.putNumber("Intake/RightTarget", m_extension.rightTarget());
+    SmartDashboard.putBoolean("Intake/RetractedLimit", m_retracted);
+    SmartDashboard.putBoolean("Intake/ExtendedLimit", m_extended);
+    SmartDashboard.putBoolean("Intake/SensorsOK", m_sensorsOk);
     SmartDashboard.putBoolean("Intake/RestoreAfterShot", m_restoreExtensionAfterShot);
   }
 
-  /** Start extending. The periodic loop stops it when S2 triggers. Safe to call from auto. */
+  /** Start extending. The sync loop stops it when S2 triggers. Safe to call from auto. */
   public void extend() {
-    m_extension.requestExtend(isExtended(), Timer.getFPGATimestamp());
+    m_extension.requestExtend(m_leftPos, m_rightPos, m_extended, Timer.getFPGATimestamp());
   }
 
-  /** Start retracting. The periodic loop stops it when S1 triggers. Safe to call from auto. */
+  /** Start retracting. The sync loop stops it when S1 triggers. Safe to call from auto. */
   public void retract() {
-    m_extension.requestRetract(isRetracted(), Timer.getFPGATimestamp());
+    m_extension.requestRetract(m_leftPos, m_rightPos, m_retracted, Timer.getFPGATimestamp());
   }
 
-  /** Stop the extension where it is. */
+  /** Stop the extension where it is. A fault stays latched until the next extend or retract. */
   public void stopExtension() {
     m_extension.stop();
     stopScrews();
@@ -128,7 +194,7 @@ public class IntakeSubsystem extends SubsystemBase {
   /**
    * Retract the extension for a shot. The first call remembers whether it was fully extended so
    * {@link #restoreAfterShot()} can send it back out. Further calls during the same shot do
-   * nothing, so a retract that timed out is not restarted every loop.
+   * nothing, so a retract that stopped early is not restarted every loop.
    */
   public void retractForShot() {
     if (m_holdingShotRetraction) {
@@ -179,24 +245,24 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(0);
   }
 
-  /** Start extending and end right away. The periodic loop finishes the move. */
+  /** Start extending and end right away. The sync loop finishes the move. */
   public Command extendCommand() {
     return runOnce(this::extend);
   }
 
-  /** Start retracting and end right away. The periodic loop finishes the move. */
+  /** Start retracting and end right away. The sync loop finishes the move. */
   public Command retractCommand() {
     return runOnce(this::retract);
   }
 
-  /** Extend and wait until the move ends, for auto steps that must not continue early. */
+  /** Extend and wait until the move ends (or faults), for auto steps that must not continue early. */
   public Command extendAndWaitCommand() {
-    return extendCommand().andThen(waitUntilResting());
+    return extendCommand().andThen(waitUntilStopped());
   }
 
-  /** Retract and wait until the move ends, for auto steps that must not continue early. */
+  /** Retract and wait until the move ends (or faults), for auto steps that must not continue early. */
   public Command retractAndWaitCommand() {
-    return retractCommand().andThen(waitUntilResting());
+    return retractCommand().andThen(waitUntilStopped());
   }
 
   public Command stopExtensionCommand() {
@@ -227,38 +293,61 @@ public class IntakeSubsystem extends SubsystemBase {
     return runOnce(this::stopStorage);
   }
 
-  private boolean isResting() {
-    return m_extension.state() == State.REST;
+  /** Does not require the subsystem, so a shot or button can still change the move meanwhile. */
+  private Command waitUntilStopped() {
+    return Commands.waitUntil(() -> !m_extension.isDriving());
   }
 
-  /** Does not require the subsystem, so a shot or button can still change the move meanwhile. */
-  private Command waitUntilResting() {
-    return Commands.waitUntil(this::isResting);
+  private void readSensors() {
+    StatusCode status =
+        BaseStatusSignal.refreshAll(
+            m_leftPosSignal, m_rightPosSignal, m_retractedSignal, m_extendedSignal);
+    m_sensorsOk = status.isOK();
+    m_leftPos = m_leftPosSignal.getValueAsDouble();
+    m_rightPos = m_rightPosSignal.getValueAsDouble();
+    m_retracted = m_retractedSignal.getValue();
+    m_extended = m_extendedSignal.getValue();
   }
 
   private void stopScrews() {
-    // The right screw is a follower, so only the leader is commanded.
-    m_leftScrew.setControl(m_voltageOut.withOutput(0));
+    // Each screw is stopped on its own; neither follows the other.
+    m_leftScrew.setControl(m_neutral);
+    m_rightScrew.setControl(m_neutral);
+  }
+
+  private void zeroScrews() {
+    m_leftScrew.setPosition(0);
+    m_rightScrew.setPosition(0);
+    m_leftPos = 0;
+    m_rightPos = 0;
   }
 
   /**
-   * Caps torque and battery current on one extension screw. The follower still produces its own
-   * torque, so both screws get the same limit.
+   * Brake when stopped, positive = outward, position gains, and torque/battery current caps. Each
+   * screw gets the same settings so they behave the same.
    */
-  private void applyScrewCurrentLimit(TalonFX screw) {
-    CurrentLimitsConfigs limits =
-        new CurrentLimitsConfigs()
-            .withStatorCurrentLimit(kStatorCurrentLimitAmps)
-            .withStatorCurrentLimitEnable(true)
-            .withSupplyCurrentLimit(kSupplyCurrentLimitAmps)
-            .withSupplyCurrentLimitEnable(true)
-            .withSupplyCurrentLowerLimit(kSupplyCurrentLimitAmps)
-            .withSupplyCurrentLowerTime(0.0);
-    StatusCode status = screw.getConfigurator().apply(limits);
+  private void configureScrew(TalonFX screw, InvertedValue inverted) {
+    var config = new TalonFXConfiguration();
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    config.MotorOutput.Inverted = inverted;
+    config.Slot0.kP = kScrewKp;
+    config.Slot0.kV = kScrewKv;
+    config.CurrentLimits.StatorCurrentLimit = kStatorCurrentLimitAmps;
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    config.CurrentLimits.SupplyCurrentLimit = kSupplyCurrentLimitAmps;
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+    config.CurrentLimits.SupplyCurrentLowerLimit = kSupplyCurrentLimitAmps;
+    config.CurrentLimits.SupplyCurrentLowerTime = 0.0;
+    StatusCode status = screw.getConfigurator().apply(config);
     if (!status.isOK()) {
       DriverStation.reportError(
-          "Extension current limit was not applied to TalonFX " + screw.getDeviceID() + ": " + status,
-          false);
+          "Intake screw TalonFX " + screw.getDeviceID() + " was not configured: " + status, false);
     }
+  }
+
+  private static InvertedValue flip(InvertedValue value) {
+    return value == InvertedValue.Clockwise_Positive
+        ? InvertedValue.CounterClockwise_Positive
+        : InvertedValue.Clockwise_Positive;
   }
 }

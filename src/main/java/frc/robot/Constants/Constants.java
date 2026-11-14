@@ -4,6 +4,7 @@
 
 package frc.robot.Constants;
 
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -139,26 +140,53 @@ public final class Constants {
     public static final double kStorageSpeed = 0.4;
 
     /**
-     * Volts on the left screw while extending (moving out toward CANdi S2). Negative drives
-     * inward, so if the first test moves the wrong way, flip the sign of both voltages.
+     * Which way the left screw motor counts as positive. Positive must mean the intake moves OUT.
+     * If {@code Intake/LeftPos} goes negative while extending, flip this.
      */
-    public static final double kExtendVoltage = 4.0;
-
-    /** Volts on the left screw while retracting (moving in toward CANdi S1). */
-    public static final double kRetractVoltage = -4.0;
+    public static final InvertedValue kLeftScrewInverted = InvertedValue.CounterClockwise_Positive;
 
     /**
-     * How the right screw follows the left one. {@code Opposed} matches the original code, which
-     * always commanded the right screw opposite the left. Check on blocks before a full run: if
-     * the two screws fight each other, change this to {@code Aligned}.
+     * How the right screw turns relative to the left. {@code Opposed} matches the original code,
+     * which always commanded the right screw opposite the left. If {@code Intake/RightPos} goes
+     * negative while extending, change this to {@code Aligned}.
      */
     public static final MotorAlignmentValue kRightScrewAlignment = MotorAlignmentValue.Opposed;
 
+    /** Position gain for each screw, volts per rotation of error. */
+    public static final double kScrewKp = 2.0;
+
+    /** Velocity feedforward for each screw, volts per rotation per second. */
+    public static final double kScrewKv = 0.12;
+
     /**
-     * Longest one extend or retract may run, in seconds. If its limit sensor has not triggered by
-     * then, the screws stop and the driver station shows an error.
+     * How fast the shared target moves while both screws keep up, in motor rotations per second.
+     * The intake is slower than this whenever one screw has to wait for the other.
      */
-    public static final double kExtensionTimeoutSeconds = 5.0;
+    public static final double kSyncSpeedRps = 10.0;
+
+    /** Rough full travel, retracted to extended, in motor rotations. Measure and update. */
+    public static final double kTravelRotations = 70.0;
+
+    /** The target may go this far past each end of travel before a sensor must have stopped it. */
+    public static final double kTravelMarginRot = 5.0;
+
+    /** Both screws must be within this many rotations of the target before it moves on. */
+    public static final double kFollowToleranceRot = 0.25;
+
+    /** Stop both screws when they are further apart than this, in rotations. */
+    public static final double kSyncFaultRot = 1.0;
+
+    /** Stop both screws when either is further than this from its target, in rotations. */
+    public static final double kTrackingFaultRot = 1.5;
+
+    /** A fault condition must last this long (3 checks at 10 ms) before both screws stop. */
+    public static final double kFaultDebounceSeconds = 0.03;
+
+    /** Stop when the target has been unable to move for this long: both screws are stuck. */
+    public static final double kNoProgressSeconds = 0.5;
+
+    /** How often the sync check runs, in seconds. Must be 0.02 or less. */
+    public static final double kSyncPeriodSeconds = 0.01;
 
     /**
      * Torque cap on each extension screw, in amps. Stator current is the current that makes torque,

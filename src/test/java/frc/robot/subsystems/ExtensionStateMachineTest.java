@@ -12,72 +12,148 @@ import org.junit.jupiter.api.Test;
 
 import frc.robot.subsystems.ExtensionStateMachine.State;
 
-/** Checks the rest / extending / retracting rules without a robot. */
+/**
+ * Checks the rest / extending / retracting / realigning / fault rules with two fake screws. The
+ * fake intake's S1 triggers at 0 rotations and S2 at {@link #kTravel}.
+ */
 class ExtensionStateMachineTest {
-  private static final double kTimeout = 5.0;
+  static final double kDt = 0.01;
+  static final double kTravel = 40.0;
 
-  private final ExtensionStateMachine m_machine = new ExtensionStateMachine(kTimeout);
+  final ExtensionStateMachine m_machine =
+      new ExtensionStateMachine(ScrewSyncTest.config(), 15.0);
+  double m_left;
+  double m_right;
+  double m_leftSpeed = 20.0;
+  double m_rightSpeed = 20.0;
+  double m_now;
+
+  boolean retracted() {
+    return Math.min(m_left, m_right) <= 0.05;
+  }
+
+  boolean extended() {
+    return Math.max(m_left, m_right) >= kTravel - 0.05;
+  }
+
+  State tick() {
+    m_now += kDt;
+    State state = m_machine.update(m_left, m_right, retracted(), extended(), m_now);
+    if (m_machine.isDriving()) {
+      m_left = ScrewSyncTest.Plant.approach(m_left, m_machine.leftTarget(), m_leftSpeed * kDt);
+      m_right = ScrewSyncTest.Plant.approach(m_right, m_machine.rightTarget(), m_rightSpeed * kDt);
+    }
+    return state;
+  }
+
+  State runUntilStopped(double seconds) {
+    State state = m_machine.state();
+    for (int i = 0; i < seconds / kDt; i++) {
+      state = tick();
+      if (!m_machine.isDriving()) {
+        break;
+      }
+    }
+    return state;
+  }
+
+  void extend() {
+    m_machine.requestExtend(m_left, m_right, extended(), m_now);
+  }
+
+  void retract() {
+    m_machine.requestRetract(m_left, m_right, retracted(), m_now);
+  }
 
   @Test
   void startsAtRest() {
     assertEquals(State.REST, m_machine.state());
-    assertEquals(State.REST, m_machine.update(false, false, 0.0));
+    assertEquals(State.REST, tick());
   }
 
   @Test
-  void extendRunsUntilExtendedSensor() {
-    m_machine.requestExtend(false, 0.0);
-    assertEquals(State.EXTENDING, m_machine.update(true, false, 0.02));
-    assertEquals(State.EXTENDING, m_machine.update(false, false, 1.0));
-    assertEquals(State.REST, m_machine.update(false, true, 1.02));
-    assertFalse(m_machine.lastMoveTimedOut());
-  }
+  void extendRunsUntilExtendedSensorThenRetractUntilRetracted() {
+    extend();
+    assertEquals(State.EXTENDING, tick());
+    assertEquals(State.REST, runUntilStopped(10));
+    assertTrue(extended());
+    assertFalse(m_machine.lastMoveHitSoftLimit());
 
-  @Test
-  void retractRunsUntilRetractedSensor() {
-    m_machine.requestRetract(false, 0.0);
-    assertEquals(State.RETRACTING, m_machine.update(false, true, 0.02));
-    assertEquals(State.RETRACTING, m_machine.update(false, false, 1.0));
-    assertEquals(State.REST, m_machine.update(true, false, 1.02));
+    retract();
+    assertEquals(State.RETRACTING, tick());
+    assertEquals(State.REST, runUntilStopped(10));
+    assertTrue(retracted());
   }
 
   @Test
   void requestAtTheMatchingLimitStaysAtRest() {
-    m_machine.requestExtend(true, 0.0);
-    assertEquals(State.REST, m_machine.update(false, true, 0.02));
-    m_machine.requestRetract(true, 0.04);
-    assertEquals(State.REST, m_machine.update(true, false, 0.06));
+    retract(); // already at S1
+    assertEquals(State.REST, tick());
   }
 
   @Test
-  void oppositeRequestSwitchesDirectionAndRestartsTimeout() {
-    m_machine.requestExtend(false, 0.0);
-    m_machine.update(false, false, 4.0);
-    m_machine.requestRetract(false, 4.0);
-    assertEquals(State.RETRACTING, m_machine.update(false, false, 8.0));
-    assertEquals(State.REST, m_machine.update(true, false, 8.02));
+  void jamStopsBothAndTheNextPressRealignsThenMoves() {
+    extend();
+    for (int i = 0; i < 100; i++) {
+      tick();
+    }
+    m_rightSpeed = 0; // right jams
+    assertEquals(State.FAULT, runUntilStopped(2));
+    double leftAtFault = m_left;
+    for (int i = 0; i < 50; i++) {
+      tick();
+    }
+    assertEquals(leftAtFault, m_left, 1e-9); // stays stopped while faulted
+
+    m_rightSpeed = 20; // jam cleared
+    retract();
+    assertEquals(State.REALIGNING, m_machine.state());
+    // Realign brings left back to right, then the retract runs to S1.
+    assertEquals(State.REST, runUntilStopped(10));
+    assertTrue(retracted());
+    assertEquals(m_left, m_right, 0.25);
   }
 
   @Test
-  void repeatedRequestDoesNotRestartTimeout() {
-    m_machine.requestExtend(false, 0.0);
-    m_machine.requestExtend(false, 4.0);
-    assertEquals(State.REST, m_machine.update(false, false, 5.1));
-    assertTrue(m_machine.lastMoveTimedOut());
+  void stopKeepsAFaultLatched() {
+    extend();
+    for (int i = 0; i < 50; i++) {
+      tick();
+    }
+    m_leftSpeed = 0;
+    assertEquals(State.FAULT, runUntilStopped(2));
+    m_machine.stop();
+    assertEquals(State.FAULT, m_machine.state());
   }
 
   @Test
-  void missingSensorTimesOutToRest() {
-    m_machine.requestRetract(false, 0.0);
-    assertEquals(State.RETRACTING, m_machine.update(false, false, kTimeout));
-    assertEquals(State.REST, m_machine.update(false, false, kTimeout + 0.02));
-    assertTrue(m_machine.lastMoveTimedOut());
+  void screwsStartingOutOfLineRealignFirst() {
+    m_left = 3.0;
+    m_right = 1.0;
+    extend();
+    assertEquals(State.REALIGNING, m_machine.state());
+    assertEquals(State.REST, runUntilStopped(15));
+    assertTrue(extended());
+    assertEquals(m_left, m_right, 0.25);
+  }
+
+  @Test
+  void oppositeRequestReversesTheMove() {
+    extend();
+    for (int i = 0; i < 100; i++) {
+      tick();
+    }
+    retract();
+    assertEquals(State.RETRACTING, tick());
+    assertEquals(State.REST, runUntilStopped(10));
+    assertTrue(retracted());
   }
 
   @Test
   void stopGoesToRest() {
-    m_machine.requestExtend(false, 0.0);
+    extend();
+    tick();
     m_machine.stop();
-    assertEquals(State.REST, m_machine.update(false, false, 0.02));
+    assertEquals(State.REST, tick());
   }
 }
