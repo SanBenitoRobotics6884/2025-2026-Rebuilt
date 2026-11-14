@@ -64,9 +64,14 @@ public class RobotContainer {
     NamedCommands.registerCommand("runIntakeCommand", m_intake.runOnce(m_intake::intake));
     NamedCommands.registerCommand("runIntakeBackCommand", m_intake.reverseIntakeCommand());
     NamedCommands.registerCommand("stopIntakeCommand", m_intake.stopRollersCommand());
-    NamedCommands.registerCommand("deployIntakeCommand", m_intake.runOnce(m_intake::extend));
-    NamedCommands.registerCommand("stopStorageCommand", m_intake.stopScrewsCommand());
-    NamedCommands.registerCommand("undepolyIntakeCommand", m_intake.runOnce(m_intake::retract));
+    // Extend/retract start the move and end; the intake's 20 ms state machine stops it at the
+    // limit sensor. The "AndWait" versions hold the auto until the move is finished.
+    NamedCommands.registerCommand("deployIntakeCommand", m_intake.extendCommand());
+    NamedCommands.registerCommand("undepolyIntakeCommand", m_intake.retractCommand());
+    NamedCommands.registerCommand("extendIntakeAndWait", m_intake.extendAndWaitCommand());
+    NamedCommands.registerCommand("retractIntakeAndWait", m_intake.retractAndWaitCommand());
+    // This name has always stopped the extension screws in the existing autos.
+    NamedCommands.registerCommand("stopStorageCommand", m_intake.stopExtensionCommand());
     NamedCommands.registerCommand("runRollersCommand", m_intake.runOnce(m_intake::runStorage));
     NamedCommands.registerCommand("stopRollersCommand", m_intake.stopStorageCommand());
     NamedCommands.registerCommand("runIndexCommand", m_outtake.startIndexerCommand());
@@ -146,17 +151,10 @@ public class RobotContainer {
   }
 
   private void bindMechanismControls(CommandXboxController controller) {
-    // kPovDown is angle 180, which this robot previously called D_PAD_RIGHT.
-    // kPovRight is angle 90, which this robot previously called D_PAD_DOWN.
-    controller.pov(kPovDown).whileTrue(m_intake.extendCommand())
-        .onFalse(m_intake.stopScrewsCommand());
-    controller.pov(kPovRight).whileTrue(m_intake.retractCommand())
-        .onFalse(m_intake.stopScrewsCommand());
-    // D-pad up sweeps both hard stops and writes the measured extension. Releasing the button
-    // does not cancel the sweep. Teleop only, so the button cannot take the intake during auto.
-    controller.pov(kPovUp)
-        .and(RobotModeTriggers.teleop())
-        .onTrue(m_intake.recalibrateCommand());
+    // One press starts the move. The intake keeps going until its limit sensor triggers:
+    // D-pad down extends to CANdi S2, D-pad up retracts to CANdi S1.
+    controller.pov(kPovDown).onTrue(m_intake.extendCommand());
+    controller.pov(kPovUp).onTrue(m_intake.retractCommand());
     controller.leftTrigger().whileTrue(m_intake.intakeCommand())
         .onFalse(m_intake.stopRollersCommand());
     controller.b().whileTrue(m_intake.runStorageCommand())
@@ -189,9 +187,9 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-  /** Writes the live screw position so the next power cycle can seed the encoder. */
-  public void saveIntakeExtension() {
-    m_intake.saveMeasuredExtension();
+  /** Stops any extension move so enabling again never resumes an old one. */
+  public void stopIntakeExtension() {
+    m_intake.stopExtension();
   }
 
   /**

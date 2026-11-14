@@ -6,26 +6,22 @@ package frc.robot.subsystems;
 
 import static frc.robot.Constants.Constants.Intake.*;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusCode;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.CANdi;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.ExtensionStateMachine.State;
 
 public class IntakeSubsystem extends SubsystemBase {
   private final TalonFX m_leftScrew = new TalonFX(kLeftScrewId);
@@ -33,179 +29,117 @@ public class IntakeSubsystem extends SubsystemBase {
   private final TalonFX m_intakeRoller = new TalonFX(kIntakeRollerId);
   private final TalonFX m_storageRoller = new TalonFX(kStorageRollerId);
 
-  private final PositionVoltage m_positionRequest = new PositionVoltage(0).withSlot(0);
-  private final VoltageOut m_voltageOut = new VoltageOut(0);
-  private final DigitalInput m_limitSwitch = new DigitalInput(kLimitSwitchDio);
-  private final Timer m_simTimer = new Timer();
-  private final ExtensionCalibrator m_calibrator =
-      new ExtensionCalibrator(ExtensionCalibrator.Config.intake());
-  private final Path m_extensionMemoryPath =
-      Filesystem.getOperatingDirectory().toPath().resolve(kExtensionMemoryFile);
-
-  /** Skip rewriting the file when the screws were already told to hold this spot. */
-  private static final double kPositionWriteDeadbandRotations = 0.05;
-
   /**
-   * Encoder readback within this many rotations of the seeded value means {@code setPosition} has
-   * been echoed, so a later measured save will not replace the file with the power-up zero.
+   * CANdi with the two extension limit sensors. S1 is fully retracted, S2 is fully extended. If a
+   * sensor reads backwards on the dashboard, set {@code S1CloseState} / {@code S2CloseState} in a
+   * {@code CANdiConfiguration} and apply it in the constructor.
    */
-  private static final double kSeedEchoToleranceRotations = 0.05;
+  private final CANdi m_candi = new CANdi(kCandiId);
+  private final StatusSignal<Boolean> m_retractedSignal = m_candi.getS1Closed();
+  private final StatusSignal<Boolean> m_extendedSignal = m_candi.getS2Closed();
 
-  private double m_savedPositionRotations = Double.NaN;
-  /** Measured saves stay off until the motor echoes the seed, or a command writes a new target. */
-  private boolean m_acceptMeasuredPosition;
-  private boolean m_reportedWriteFailure;
+  private final VoltageOut m_voltageOut = new VoltageOut(0);
+  private final ExtensionStateMachine m_extension =
+      new ExtensionStateMachine(kExtensionTimeoutSeconds);
 
   /** True from the first retract of a shot until that shot puts the screws back. */
   private boolean m_holdingShotRetraction;
-  /** Latched on the first retract of a shot. True only when that shot started deployed. */
+  /** Latched on the first retract of a shot. True only when that shot started fully extended. */
   private boolean m_restoreExtensionAfterShot;
 
-  /** Creates a new IntakeSubsystem. */
+  /** Creates a new IntakeSubsystem. Every boot starts in {@link State#REST}. */
   public IntakeSubsystem() {
-    var gains = new Slot0Configs();
-    gains.kP = kP;
-
-    m_leftScrew.getConfigurator().apply(gains);
-    m_rightScrew.getConfigurator().apply(gains);
     applyScrewCurrentLimit(m_leftScrew);
     applyScrewCurrentLimit(m_rightScrew);
-    m_rightScrew.setControl(
-        new Follower(m_leftScrew.getDeviceID(), MotorAlignmentValue.Aligned));
+    m_rightScrew.setControl(new Follower(m_leftScrew.getDeviceID(), kRightScrewAlignment));
 
-    // Broadcast current and velocity fast enough to see a hard-stop spike.
-    m_leftScrew.getStatorCurrent().setUpdateFrequency(50);
-    m_rightScrew.getStatorCurrent().setUpdateFrequency(50);
-    m_leftScrew.getVelocity().setUpdateFrequency(50);
-    m_leftScrew.getPosition().setUpdateFrequency(50);
+    // Read the sensors faster than the 20 ms loop so a trigger is never a whole loop late.
+    BaseStatusSignal.setUpdateFrequencyForAll(100, m_retractedSignal, m_extendedSignal);
 
-    if (RobotBase.isSimulation()) {
-      m_simTimer.start();
-    }
-    if (!restoreExtensionMemory() && RobotBase.isSimulation()) {
-      // Simulation has no stator current, so a hard-stop sweep would only time out.
-      m_calibrator.assumeCalibrated(
-          kHardStopBackoffRotations, kSimTravelRotations - kHardStopBackoffRotations);
-    }
-
-    SmartDashboard.putData("Intake/Recalibrate", recalibrateCommand());
+    stopScrews();
   }
 
-  public boolean isCalibrated() {
-    return m_calibrator.isCalibrated();
+  /** S1: the intake is fully retracted. */
+  public boolean isRetracted() {
+    return m_retractedSignal.getValue();
   }
 
-  public boolean isLimitPressed() {
-    // Invert when the switch is wired normally closed.
-    return !m_limitSwitch.get();
+  /** S2: the intake is fully extended. */
+  public boolean isExtended() {
+    return m_extendedSignal.getValue();
   }
 
-  public void resetTimers() {
-    m_simTimer.start();
-    m_simTimer.reset();
+  public State getExtensionState() {
+    return m_extension.state();
   }
 
+  /** Runs every 20 ms robot loop: read the sensors, step the state machine, drive the screws. */
   @Override
   public void periodic() {
-    SmartDashboard.putBoolean("Intake/Calibrated", m_calibrator.isCalibrated());
-    SmartDashboard.putString("Intake/CalibrationPhase", m_calibrator.phase().name());
-    SmartDashboard.putNumber("Intake/ScrewCurrentAmps", screwCurrentAmps());
-    SmartDashboard.putNumber("Intake/ScrewStatorLimitAmps", kStatorCurrentLimitAmps);
-    SmartDashboard.putNumber(
-        "Intake/ScrewPositionRotations", m_leftScrew.getPosition().getValueAsDouble());
-    SmartDashboard.putNumber(
-        "Intake/ExtendPositionRotations", m_calibrator.extendPositionRotations());
-    SmartDashboard.putNumber(
-        "Intake/RetractPositionRotations", m_calibrator.retractPositionRotations());
-    SmartDashboard.putNumber("Intake/SavedPositionRotations", m_savedPositionRotations);
-    SmartDashboard.putBoolean("Intake/Extended", isExtended());
+    BaseStatusSignal.refreshAll(m_retractedSignal, m_extendedSignal);
+    boolean retracted = isRetracted();
+    boolean extended = isExtended();
+
+    State before = m_extension.state();
+    State state = m_extension.update(retracted, extended, Timer.getFPGATimestamp());
+    if (before != State.REST && state == State.REST && m_extension.lastMoveTimedOut()) {
+      DriverStation.reportError(
+          "Intake " + before.name().toLowerCase() + " timed out after "
+              + kExtensionTimeoutSeconds + " s without its limit sensor. Check the CANdi wiring.",
+          false);
+    }
+
+    switch (state) {
+      case EXTENDING:
+        m_leftScrew.setControl(m_voltageOut.withOutput(kExtendVoltage));
+        break;
+      case RETRACTING:
+        m_leftScrew.setControl(m_voltageOut.withOutput(kRetractVoltage));
+        break;
+      case REST:
+      default:
+        stopScrews();
+        break;
+    }
+
+    SmartDashboard.putString("Intake/State", state.name());
+    SmartDashboard.putBoolean("Intake/RetractedLimit", retracted);
+    SmartDashboard.putBoolean("Intake/ExtendedLimit", extended);
+    SmartDashboard.putBoolean("Intake/CANdiConnected", m_retractedSignal.getStatus().isOK());
     SmartDashboard.putBoolean("Intake/RestoreAfterShot", m_restoreExtensionAfterShot);
-    if (!m_acceptMeasuredPosition && m_calibrator.isCalibrated()) {
-      var position = m_leftScrew.getPosition();
-      if (position.getStatus() == StatusCode.OK
-          && !Double.isNaN(m_savedPositionRotations)
-          && Math.abs(position.getValueAsDouble() - m_savedPositionRotations)
-              <= kSeedEchoToleranceRotations) {
-        m_acceptMeasuredPosition = true;
-      }
-    }
   }
 
-  /**
-   * Writes the live encoder position when it is safe to trust. Disabled-init calls this so the
-   * next boot matches where the screws stopped. A boot that has not yet heard the seeded position
-   * echoed back leaves the file alone.
-   */
-  public void saveMeasuredExtension() {
-    if (!m_calibrator.isCalibrated() || !m_acceptMeasuredPosition) {
-      return;
-    }
-    var position = m_leftScrew.getPosition();
-    position.refresh();
-    if (position.getStatus() != StatusCode.OK) {
-      return;
-    }
-    rememberPosition(position.getValueAsDouble());
-  }
-
-  /**
-   * Sweeps both hard stops when the screws have no saved position. A restored file counts as
-   * already calibrated, so this command ends immediately.
-   */
-  public Command calibrateCommand() {
-    return buildCalibrateCommand(false);
-  }
-
-  /** Runs the hard-stop sweep again, even if a previous pass already succeeded. */
-  public Command recalibrateCommand() {
-    return buildCalibrateCommand(true);
-  }
-
-  /** Move the screws to the deployed position, just inside the outer hard stop. */
+  /** Start extending. The periodic loop stops it when S2 triggers. Safe to call from auto. */
   public void extend() {
-    if (!m_calibrator.isCalibrated()) {
-      return;
-    }
-    double target = m_calibrator.extendPositionRotations();
-    setLeftScrewPosition(target);
-    rememberPosition(target);
+    m_extension.requestExtend(isExtended(), Timer.getFPGATimestamp());
   }
 
-  /** Move the screws to the stowed position, just inside the fully-in hard stop. */
+  /** Start retracting. The periodic loop stops it when S1 triggers. Safe to call from auto. */
   public void retract() {
-    if (!m_calibrator.isCalibrated()) {
-      return;
-    }
-    double target = m_calibrator.retractPositionRotations();
-    setLeftScrewPosition(target);
-    rememberPosition(target);
+    m_extension.requestRetract(isRetracted(), Timer.getFPGATimestamp());
+  }
+
+  /** Stop the extension where it is. */
+  public void stopExtension() {
+    m_extension.stop();
+    stopScrews();
   }
 
   /**
-   * True when the screws were last told to hold the deployed setpoint. A shot reads this once,
-   * before it stows them, so it can deploy again only if the shot started there.
-   */
-  public boolean isExtended() {
-    if (!m_calibrator.isCalibrated() || Double.isNaN(m_savedPositionRotations)) {
-      return false;
-    }
-    return Math.abs(m_savedPositionRotations - m_calibrator.extendPositionRotations())
-        <= kExtendedToleranceRotations;
-  }
-
-  /**
-   * Stow the screws for a shot. The first call remembers {@link #isExtended()} so a later
-   * {@link #restoreAfterShot()} can deploy again. Further calls only keep holding the stow.
+   * Retract the extension for a shot. The first call remembers whether it was fully extended so
+   * {@link #restoreAfterShot()} can send it back out. Further calls during the same shot do
+   * nothing, so a retract that timed out is not restarted every loop.
    */
   public void retractForShot() {
-    if (!m_holdingShotRetraction) {
-      m_restoreExtensionAfterShot = isExtended();
-      m_holdingShotRetraction = true;
+    if (m_holdingShotRetraction) {
+      return;
     }
+    m_restoreExtensionAfterShot = isExtended() || m_extension.state() == State.EXTENDING;
+    m_holdingShotRetraction = true;
     retract();
   }
 
-  /** Deploy the screws again when the shot that stowed them had started extended. */
+  /** Extend again when the shot that retracted the intake had started extended. */
   public void restoreAfterShot() {
     if (!m_holdingShotRetraction) {
       return;
@@ -216,17 +150,6 @@ public class IntakeSubsystem extends SubsystemBase {
     if (restore) {
       extend();
     }
-  }
-
-  /** Drive both screws to the same side of the extend setpoint. */
-  public void resetScrews() {
-    if (!m_calibrator.isCalibrated()) {
-      return;
-    }
-    double position = -m_calibrator.extendPositionRotations();
-    m_leftScrew.setControl(m_positionRequest.withPosition(position));
-    m_rightScrew.setControl(m_positionRequest.withPosition(position));
-    rememberPosition(position);
   }
 
   public void intake() {
@@ -245,13 +168,6 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(-kStorageSpeed);
   }
 
-  /** Stop the linear screws and remember where they actually stopped. */
-  public void stopScrews() {
-    m_leftScrew.set(0);
-    m_rightScrew.set(0);
-    saveMeasuredExtension();
-  }
-
   /** Stop the intake roller and the storage roller. */
   public void stopRollers() {
     m_intakeRoller.set(0);
@@ -263,16 +179,28 @@ public class IntakeSubsystem extends SubsystemBase {
     m_storageRoller.set(0);
   }
 
+  /** Start extending and end right away. The periodic loop finishes the move. */
   public Command extendCommand() {
-    return run(this::extend);
+    return runOnce(this::extend);
   }
 
+  /** Start retracting and end right away. The periodic loop finishes the move. */
   public Command retractCommand() {
-    return run(this::retract);
+    return runOnce(this::retract);
   }
 
-  public Command resetScrewsCommand() {
-    return run(this::resetScrews);
+  /** Extend and wait until the move ends, for auto steps that must not continue early. */
+  public Command extendAndWaitCommand() {
+    return extendCommand().andThen(waitUntilResting());
+  }
+
+  /** Retract and wait until the move ends, for auto steps that must not continue early. */
+  public Command retractAndWaitCommand() {
+    return retractCommand().andThen(waitUntilResting());
+  }
+
+  public Command stopExtensionCommand() {
+    return runOnce(this::stopExtension);
   }
 
   public Command intakeCommand() {
@@ -291,10 +219,6 @@ public class IntakeSubsystem extends SubsystemBase {
     return run(this::reverseStorage);
   }
 
-  public Command stopScrewsCommand() {
-    return runOnce(this::stopScrews);
-  }
-
   public Command stopRollersCommand() {
     return runOnce(this::stopRollers);
   }
@@ -303,65 +227,18 @@ public class IntakeSubsystem extends SubsystemBase {
     return runOnce(this::stopStorage);
   }
 
-  private Command buildCalibrateCommand(boolean force) {
-    return run(this::executeCalibration)
-        .beforeStarting(() -> startCalibration(force))
-        .until(() -> m_calibrator.isCalibrated() || m_calibrator.isFailed())
-        .finallyDo(this::finishCalibrationCommand)
-        .withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
+  private boolean isResting() {
+    return m_extension.state() == State.REST;
   }
 
-  private void startCalibration(boolean force) {
-    if (!m_calibrator.start(force, Timer.getFPGATimestamp())) {
-      return;
-    }
-    // The sweep is about to move the screws, so the old file is no longer where they are.
-    m_savedPositionRotations = Double.NaN;
-    m_acceptMeasuredPosition = false;
-    ExtensionMemory.delete(m_extensionMemoryPath);
-    m_rightScrew.setControl(
-        new Follower(m_leftScrew.getDeviceID(), MotorAlignmentValue.Aligned));
+  /** Does not require the subsystem, so a shot or button can still change the move meanwhile. */
+  private Command waitUntilResting() {
+    return Commands.waitUntil(this::isResting);
   }
 
-  private void executeCalibration() {
-    ExtensionCalibrator.Action action =
-        m_calibrator.step(
-            new ExtensionCalibrator.Sample(
-                m_leftScrew.getPosition().getValueAsDouble(),
-                m_leftScrew.getVelocity().getValueAsDouble(),
-                screwCurrentAmps(),
-                isLimitPressed(),
-                Timer.getFPGATimestamp()));
-    if (action.warning != null) {
-      DriverStation.reportWarning(action.warning, false);
-    }
-    if (action.error != null) {
-      DriverStation.reportError(action.error, false);
-    }
-    if (action.applyVoltage) {
-      m_leftScrew.setControl(m_voltageOut.withOutput(action.voltage));
-    }
-    if (action.zeroEncoder) {
-      seedEncoder(action.encoderLeftRotations);
-      // Record the position at the hard stop, then retract() below replaces it with the stow
-      // target the screws are told to hold.
-      rememberPosition(action.encoderLeftRotations);
-    }
-    if (action.holdRetract) {
-      // Leave the screws just off whichever stop we finished on, then stow them.
-      retract();
-    }
-    if (action.stopScrews) {
-      stopScrews();
-    }
-  }
-
-  private void finishCalibrationCommand(boolean interrupted) {
-    m_calibrator.onCommandEnd(interrupted);
-    if (m_calibrator.isCalibrated()) {
-      return;
-    }
-    stopScrews();
+  private void stopScrews() {
+    // The right screw is a follower, so only the leader is commanded.
+    m_leftScrew.setControl(m_voltageOut.withOutput(0));
   }
 
   /**
@@ -383,75 +260,5 @@ public class IntakeSubsystem extends SubsystemBase {
           "Extension current limit was not applied to TalonFX " + screw.getDeviceID() + ": " + status,
           false);
     }
-  }
-
-  private double screwCurrentAmps() {
-    return Math.max(
-        m_leftScrew.getStatorCurrent().getValueAsDouble(),
-        m_rightScrew.getStatorCurrent().getValueAsDouble());
-  }
-
-  private void setLeftScrewPosition(double leftRotations) {
-    m_leftScrew.setControl(m_positionRequest.withPosition(leftRotations));
-    m_rightScrew.setControl(m_positionRequest.withPosition(-leftRotations));
-  }
-
-  /**
-   * Seeds both screw encoders in the calibrated frame. The right screw is commanded to the
-   * opposite rotation everywhere else, so its sensor has to start there too.
-   */
-  private void seedEncoder(double leftRotations) {
-    m_leftScrew.setPosition(leftRotations);
-    m_rightScrew.setPosition(-leftRotations);
-  }
-
-  /** @return true when a saved sweep was applied to the calibrator and the encoders */
-  private boolean restoreExtensionMemory() {
-    if (!Files.isRegularFile(m_extensionMemoryPath)) {
-      return false;
-    }
-    var saved = ExtensionMemory.read(m_extensionMemoryPath);
-    if (saved.isEmpty()) {
-      DriverStation.reportError(
-          "Intake extension file could not be read: " + m_extensionMemoryPath, false);
-      return false;
-    }
-    ExtensionMemory.Snapshot snapshot = saved.get();
-    m_calibrator.assumeCalibrated(snapshot.retractRotations, snapshot.extendRotations);
-    seedEncoder(snapshot.positionRotations);
-    m_savedPositionRotations = snapshot.positionRotations;
-    m_acceptMeasuredPosition = false;
-    DriverStation.reportWarning(
-        "Intake extension restored at " + snapshot.positionRotations + " rotations.", false);
-    return true;
-  }
-
-  /** Writes the calibrated ends and this left-screw position. Repeated targets are skipped. */
-  private void rememberPosition(double leftRotations) {
-    if (!m_calibrator.isCalibrated() || !Double.isFinite(leftRotations)) {
-      return;
-    }
-    if (!Double.isNaN(m_savedPositionRotations)
-        && Math.abs(m_savedPositionRotations - leftRotations) < kPositionWriteDeadbandRotations) {
-      return;
-    }
-    boolean wrote =
-        ExtensionMemory.write(
-            m_extensionMemoryPath,
-            new ExtensionMemory.Snapshot(
-                m_calibrator.retractPositionRotations(),
-                m_calibrator.extendPositionRotations(),
-                leftRotations));
-    if (!wrote) {
-      if (!m_reportedWriteFailure) {
-        DriverStation.reportError(
-            "Could not write intake extension file: " + m_extensionMemoryPath, false);
-        m_reportedWriteFailure = true;
-      }
-      return;
-    }
-    m_reportedWriteFailure = false;
-    m_savedPositionRotations = leftRotations;
-    m_acceptMeasuredPosition = true;
   }
 }

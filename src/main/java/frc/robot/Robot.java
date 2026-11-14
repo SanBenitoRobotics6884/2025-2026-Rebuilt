@@ -32,8 +32,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-    // Power-up zeros the screw encoder. Save the live position so the next boot can seed it.
-    robotContainer.saveIntakeExtension();
+    robotContainer.stopIntakeExtension();
   }
 
   @Override

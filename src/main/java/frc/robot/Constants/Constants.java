@@ -4,6 +4,8 @@
 
 package frc.robot.Constants;
 
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -127,9 +129,8 @@ public final class Constants {
     public static final int kIntakeRollerId = 10;
     public static final int kStorageRollerId = 40;
 
-    public static final int kLimitSwitchDio = 0;
-
-    public static final double kP = 0.4;
+    /** CAN ID of the CANdi with the extension limit sensors. Set this to the ID in Phoenix Tuner. */
+    public static final int kCandiId = 15;
 
     /** Duty cycle for the intake roller. Negative pulls a game piece in. */
     public static final double kIntakeSpeed = -0.4;
@@ -138,62 +139,35 @@ public final class Constants {
     public static final double kStorageSpeed = 0.4;
 
     /**
-     * Voltage sent to the left screw to drive toward the fully-in stop. Flip the sign if the first
-     * move drives the extension out. The limit switch still decides which end is "in" when it
-     * trips.
+     * Volts on the left screw while extending (moving out toward CANdi S2). Negative drives
+     * inward, so if the first test moves the wrong way, flip the sign of both voltages.
      */
-    public static final double kInwardVoltage = -3.0;
+    public static final double kExtendVoltage = 4.0;
 
-    /** Stator current above this, while the screw is barely moving, means a hard stop. */
-    public static final double kStallCurrentAmps = 35.0;
+    /** Volts on the left screw while retracting (moving in toward CANdi S1). */
+    public static final double kRetractVoltage = -4.0;
+
+    /**
+     * How the right screw follows the left one. {@code Opposed} matches the original code, which
+     * always commanded the right screw opposite the left. Check on blocks before a full run: if
+     * the two screws fight each other, change this to {@code Aligned}.
+     */
+    public static final MotorAlignmentValue kRightScrewAlignment = MotorAlignmentValue.Opposed;
+
+    /**
+     * Longest one extend or retract may run, in seconds. If its limit sensor has not triggered by
+     * then, the screws stop and the driver station shows an error.
+     */
+    public static final double kExtensionTimeoutSeconds = 5.0;
 
     /**
      * Torque cap on each extension screw, in amps. Stator current is the current that makes torque,
-     * so this is what keeps a jam from winding the linear actuator up. It has to stay above
-     * {@link #kStallCurrentAmps}: the Talon clamps at this value, and a clamp that never exceeds the
-     * stall threshold would look like the screws were still moving.
+     * so this is what keeps a jam from winding the linear actuator up.
      */
     public static final double kStatorCurrentLimitAmps = 40.0;
 
-    /**
-     * Battery-current cap on each extension screw, in amps. Calibration drives at
-     * {@link #kInwardVoltage}, where a stator-limited stall draws about a quarter of
-     * {@link #kStatorCurrentLimitAmps} from a 12 V bus, so this cap does not hide that stall.
-     */
+    /** Battery-current cap on each extension screw, in amps. */
     public static final double kSupplyCurrentLimitAmps = 30.0;
-
-    /** Below this speed, in rotations per second, the screw is treated as stopped. */
-    public static final double kStallVelocityRps = 0.5;
-
-    /** Ignore current right after a direction change so inrush is not read as a hard stop. */
-    public static final double kInrushSeconds = 0.3;
-
-    /** Current and low speed must hold this long before a hard stop counts. */
-    public static final double kStallSeconds = 0.15;
-
-    /** Give up on one direction after this long so a missed stop cannot grind the screws. */
-    public static final double kCalibrateTimeoutSeconds = 15.0;
-
-    /** Shortest believable travel between the two hard stops, in rotations. */
-    public static final double kMinTravelRotations = 10.0;
-
-    /** Park this many rotations inside each hard stop so the screws are not left stalled. */
-    public static final double kHardStopBackoffRotations = 1.0;
-
-    /** Travel used in simulation, where there is no current spike to measure. */
-    public static final double kSimTravelRotations = 70.0;
-
-    /**
-     * Saved screw position within this many rotations of the deploy setpoint counts as extended.
-     * A shot that starts there stows the screws and drives them back out when the shot ends.
-     */
-    public static final double kExtendedToleranceRotations = 3.0;
-
-    /**
-     * Last sweep, stored under the robot's operating directory ({@code /home/lvuser} on the
-     * roboRIO). Deploy overwrites {@code src/main/deploy}, so this file lives outside it.
-     */
-    public static final String kExtensionMemoryFile = "intake-calibration/extension.txt";
   }
 
   public static final class Outtake {
