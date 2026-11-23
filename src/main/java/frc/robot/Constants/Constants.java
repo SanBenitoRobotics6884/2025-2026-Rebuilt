@@ -185,6 +185,13 @@ public final class Constants {
     /** Stop when the target has been unable to move for this long: both screws are stuck. */
     public static final double kNoProgressSeconds = 0.5;
 
+    /**
+     * Longest one extend or retract may run, in seconds, as a last resort if every other check is
+     * fooled. A full move is at least kTravelRotations / kSyncSpeedRps (about 7 s), so this leaves
+     * room for one screw waiting on the other. Raise it if travel grows or sync speed drops.
+     */
+    public static final double kExtensionTimeoutSeconds = 12.0;
+
     /** How often the sync check runs, in seconds. Must be 0.02 or less. */
     public static final double kSyncPeriodSeconds = 0.01;
 
