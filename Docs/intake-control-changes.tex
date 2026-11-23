@@ -41,7 +41,7 @@
 \begin{document}
 
 {\LARGE\bfseries\color{accent} Intake and Shooter Control Changes --- Drive Team Brief}\\[4pt]
-{\small 22 November 2026 \quad$\cdot$\quad Branch \texttt{quadecnm/intake\_sensors\_test}}
+{\small 23 November 2026 \quad$\cdot$\quad Branch \texttt{quadecnm/intake\_sensors\_test}}
 
 \section*{Summary}
 
@@ -287,7 +287,7 @@ auto routine sets the right position at the start.
 \end{drivenote}
 
 \medskip
-\section*{How the extension works now}\section*{How the extension works now}
+\section*{How the extension works now}
 
 The intake now runs itself to a sensor after one press, instead of chasing fixed motor
 positions while a button is held.
@@ -393,6 +393,13 @@ out in auto.
     the shot started.
   \item \textbf{Intake roller during a shot:} it stops as the intake retracts past 75\% and
     restarts if the intake goes back out.
+  \item \textbf{Auto shots are fixed-speed:} the auto's shooter step spins the shooter at 3000 RPM
+    and feeds on the auto's own timing. Auto-aim and POSE are right-trigger (teleop) features.
+  \item \textbf{Vision at the start of an auto:} the auto sets the robot's position to the path's
+    starting point. If the robot was actually placed more than 0.5\,m or 15$^\circ$ from there and
+    the Limelight sees two or more tags, the robot snaps to where it really is, and the paths drive
+    from there. Smaller placement errors are nudged out gradually. Place the robot on the start
+    position as accurately as possible either way.
 \end{itemize}
 
 Auto times in simulation, against the 20\,s limit:
@@ -402,10 +409,10 @@ Auto times in simulation, against the 20\,s limit:
 \textbf{Auto} & \textbf{Time} & \textbf{Spare} \\
 \midrule
 \endhead
-Rightstart to Mid collcect then shoot                        & 18.84\,s & 1.2\,s \\
-RightStart to Mid collect then pass (USE THIS ONE PLAYOFFS)  & 17.10\,s & 2.9\,s \\
-Left start to Mid that collects and pass to teamside         & 14.47\,s & 5.5\,s \\
-Middle start shoot                                           &  8.72\,s & 11.3\,s \\
+Rightstart to Mid collcect then shoot                        & 18.80\,s & 1.2\,s \\
+RightStart to Mid collect then pass (USE THIS ONE PLAYOFFS)  & 17.08\,s & 2.9\,s \\
+Left start to Mid that collects and pass to teamside         & 14.41\,s & 5.6\,s \\
+Middle start shoot                                           &  8.64\,s & 11.4\,s \\
 \bottomrule
 \end{xltabular}
 
