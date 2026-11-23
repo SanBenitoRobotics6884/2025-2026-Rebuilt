@@ -92,7 +92,8 @@ public class VisionSubsystem extends SubsystemBase {
    * of the picture: positive is to the right. {@code distanceMeters} is the floor distance from
    * the robot center to that tag, or not-a-number if the camera could not measure it.
    *
-   * @param tagId the AprilTag id. Red hub tags are 9 and 10. Blue hub tags are 25 and 26
+   * @param tagId the AprilTag id. Red hub tags are RED_HUB_FIDUCIAL_L/R. Blue hub tags are
+   *     BLUE_HUB_FIDUCIAL_L/R
    * @param yawDegrees degrees from the crosshair, positive to the right
    * @param distanceMeters floor distance in meters, or not-a-number when it could not be measured
    * @param timestampSeconds when the robot code last saw this tag, on the RoboRIO clock

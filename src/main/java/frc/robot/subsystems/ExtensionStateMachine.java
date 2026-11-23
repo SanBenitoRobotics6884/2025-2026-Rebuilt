@@ -8,9 +8,9 @@ package frc.robot.subsystems;
  * Decides what the intake extension is doing, and where each lead screw should be.
  *
  * <p>This class has no hardware in it. {@link IntakeSubsystem} reads both screw encoders and the
- * two CANdi limit sensors every 10 ms, hands them to {@link #update}, and drives the screws to
- * {@link #leftTarget()} / {@link #rightTarget()} while {@link #isDriving()} is true. The screws
- * are kept turning together by {@link ScrewSync}.
+ * two CANdi limit sensors every sync check (kSyncPeriodSeconds), hands them to {@link #update},
+ * and drives the screws to {@link #leftTarget()} / {@link #rightTarget()} while
+ * {@link #isDriving()} is true. The screws are kept turning together by {@link ScrewSync}.
  *
  * <ul>
  *   <li>{@link State#REST}: screws stopped. This is where every reboot starts.

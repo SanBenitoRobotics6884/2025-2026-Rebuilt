@@ -70,6 +70,13 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean m_extended;
   private boolean m_sensorsOk;
 
+  /**
+   * Duty cycle the intake roller has been asked for (0 = off). It only reaches the motor while
+   * {@link #intakeRollerAllowed} says the intake is far enough out. See syncLoop().
+   */
+  private double m_intakeRollerRequest;
+  private boolean m_intakeRollerAllowed;
+
   /** Simulated screws and sensors. Null on the real robot. */
   private final IntakeSim m_sim;
 
@@ -85,9 +92,13 @@ public class IntakeSubsystem extends SubsystemBase {
     configureScrew(m_leftScrew, kLeftScrewInverted);
     configureScrew(m_rightScrew, rightInverted);
 
-    // Fresh readings for every 10 ms check.
+    // Fresh readings for every sync check.
     BaseStatusSignal.setUpdateFrequencyForAll(
-        100, m_leftPosSignal, m_rightPosSignal, m_retractedSignal, m_extendedSignal);
+        1.0 / kSyncPeriodSeconds,
+        m_leftPosSignal,
+        m_rightPosSignal,
+        m_retractedSignal,
+        m_extendedSignal);
 
     // Both encoders start equal, so the screws are compared turn for turn from power-up. The first
     // retract that reaches S1 sets both to 0 again.
@@ -136,13 +147,13 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /**
    * The lead-screw sync check. {@code Robot} runs this every {@link
-   * frc.robot.Constants.Constants.Intake#kSyncPeriodSeconds} (10 ms). It reads both screw
+   * frc.robot.Constants.Constants.Intake#kSyncPeriodSeconds}. It reads both screw
    * encoders and both limit sensors, checks that each screw really turned as far as it was told,
    * and then either moves both on together or stops both.
    */
   public void syncLoop() {
     if (m_sim != null) {
-      // Simulation: move the fake screws at the same 10 ms rate the real encoders report at.
+      // Simulation: move the fake screws once per sync check, the rate the real encoders report at.
       m_sim.update(kSyncPeriodSeconds);
     }
     readSensors();
@@ -201,6 +212,30 @@ public class IntakeSubsystem extends SubsystemBase {
     } else {
       stopScrews();
     }
+
+    // Intake roller: only spin it once the intake is far enough out that the wheels clear.
+    m_intakeRollerAllowed =
+        m_sensorsOk
+            && intakeRollerAllowed(m_extension.isHomed(), m_extended, m_leftPos, m_rightPos);
+    m_intakeRoller.set(m_intakeRollerAllowed ? m_intakeRollerRequest : 0.0);
+  }
+
+  /**
+   * Whether the intake is far enough out for the intake roller to spin without rubbing.
+   *
+   * <p>Fully extended (S2 closed) is always far enough. Otherwise the encoders decide, using the
+   * screw that is further in, but only once the intake is homed. Before that, the encoder
+   * position is a guess, so the roller waits.
+   */
+  static boolean intakeRollerAllowed(
+      boolean homed, boolean extendedSensor, double leftPos, double rightPos) {
+    if (extendedSensor) {
+      return true;
+    }
+    if (!homed) {
+      return false;
+    }
+    return Math.min(leftPos, rightPos) >= kIntakeRollerMinExtension * kTravelRotations;
   }
 
   /** Dashboard only. The control work happens in {@link #syncLoop()}. */
@@ -209,6 +244,9 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putString("Intake/State", m_extension.state().name());
     SmartDashboard.putString("Intake/Fault", m_extension.fault().name());
     SmartDashboard.putBoolean("Intake/Homed", m_extension.isHomed());
+    SmartDashboard.putBoolean("Intake/RollerAllowed", m_intakeRollerAllowed);
+    SmartDashboard.putNumber(
+        "Intake/ExtendedPercent", 100.0 * Math.min(m_leftPos, m_rightPos) / kTravelRotations);
     SmartDashboard.putNumber("Intake/LeftPos", m_leftPos);
     SmartDashboard.putNumber("Intake/RightPos", m_rightPos);
     SmartDashboard.putNumber("Intake/Apart", m_leftPos - m_rightPos);
@@ -296,11 +334,12 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public void intake() {
-    m_intakeRoller.set(kIntakeSpeed);
+    // syncLoop() starts it once the intake is far enough out.
+    m_intakeRollerRequest = kIntakeSpeed;
   }
 
   public void reverseIntake() {
-    m_intakeRoller.set(-kIntakeSpeed);
+    m_intakeRollerRequest = -kIntakeSpeed;
   }
 
   public void runStorage() {
@@ -313,6 +352,7 @@ public class IntakeSubsystem extends SubsystemBase {
 
   /** Stop the intake roller and the storage roller. */
   public void stopRollers() {
+    m_intakeRollerRequest = 0;
     m_intakeRoller.set(0);
     m_storageRoller.set(0);
   }

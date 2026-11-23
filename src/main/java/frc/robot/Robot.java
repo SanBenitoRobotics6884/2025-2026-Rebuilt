@@ -23,8 +23,8 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     robotContainer = new RobotContainer();
-    // Check the two intake lead screws every 10 ms, separately from the 20 ms main loop, so a jam
-    // on one screw stops both quickly even if the command scheduler runs long.
+    // Check the two intake lead screws every kSyncPeriodSeconds, separately from the main loop, so
+    // a jam on one screw stops both quickly even if the command scheduler runs long.
     addPeriodic(robotContainer::intakeSyncLoop, Constants.Intake.kSyncPeriodSeconds);
   }
 

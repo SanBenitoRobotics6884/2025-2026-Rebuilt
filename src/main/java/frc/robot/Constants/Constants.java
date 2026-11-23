@@ -82,12 +82,13 @@ public final class Constants {
      * Starting "how wrong could this be?" for a vision pose, as [x meters, y meters, heading
      * radians].
      *
-     * <p>These are not accuracy goals. They are weights. 0.5 m means the pose estimator treats the
-     * camera as rough and only nudges odometry. 4 m means it barely trusts the camera at all.
-     * Heading is large on purpose (8 rad is more than a full turn of uncertainty) so a noisy
-     * camera angle cannot overwrite the Pigeon.
+     * <p>These are not accuracy goals. They are weights. Around half a meter means the pose
+     * estimator treats the camera as rough and only nudges odometry. Several meters means it barely
+     * trusts the camera at all. Keep the heading value large on purpose (more than 2π rad is more
+     * than a full turn of uncertainty) so a noisy camera angle cannot overwrite the Pigeon.
      *
-     * <p>One tag starts at 4 m. Two or more tags start at 0.5 m. {@code VisionSubsystem} then makes
+     * <p>One tag starts at SINGLE_TAG_STD_DEVS. Two or more tags start at MULTI_TAG_STD_DEVS.
+     * {@code VisionSubsystem} then makes
      * these worse as the tags get farther away. Tune them by comparing {@code Vision Field} to the
      * swerve pose while someone pushes the robot around.
      */
@@ -136,6 +137,14 @@ public final class Constants {
     /** Duty cycle for the intake roller. Negative pulls a game piece in. */
     public static final double kIntakeSpeed = -0.4;
 
+    /**
+     * The intake roller only runs once the intake is at least this far out, as a fraction of
+     * kTravelRotations (1.0 = fully extended). Closer in, its wheels rub on internal parts.
+     * Holding the button early is fine: the roller waits, starts on its own at this point, and
+     * stops again if the intake moves back in past it. The storage roller has no limit.
+     */
+    public static final double kIntakeRollerMinExtension = 0.75;
+
     /** Duty cycle for the storage roller. */
     public static final double kStorageSpeed = 0.4;
 
@@ -164,11 +173,41 @@ public final class Constants {
      */
     public static final double kSyncSpeedRps = 15.0;
 
-    /** Rough full travel, retracted to extended, in motor rotations. Measure and update. */
-    public static final double kTravelRotations = 70.0;
+    /**
+     * Inches the nut moves per turn of the screw. AndyMark am-3262a nut: 1/2-5 ACME, 5 threads
+     * per inch, single start, so 1/5 = 0.2 in per turn.
+     */
+    public static final double kScrewLeadInches = 0.2;
 
-    /** The target may go this far past each end of travel before a sensor must have stopped it. */
-    public static final double kTravelMarginRot = 5.0;
+    /** Motor turns per screw turn. The Krakens drive the screws directly. */
+    public static final double kScrewGearRatio = 1.0;
+
+    /** Full mechanical travel, hard stop to hard stop, in inches. */
+    public static final double kTotalTravelInches = 12.0;
+
+    /** Travel from the retracted sensor (S1) to the extended sensor (S2), in inches. */
+    public static final double kSensorTravelInches = 11.75;
+
+    /** Motor rotations per inch of intake travel: kScrewGearRatio / kScrewLeadInches. */
+    public static final double kRotationsPerInch = kScrewGearRatio / kScrewLeadInches;
+
+    /** S1 to S2 in motor rotations: kSensorTravelInches x kRotationsPerInch. */
+    public static final double kTravelRotations = kSensorTravelInches * kRotationsPerInch;
+
+    /**
+     * The hard stops are about this far past each sensor, in motor rotations: half of
+     * (kTotalTravelInches - kSensorTravelInches), times kRotationsPerInch. Assumes the extra
+     * travel is split evenly between the two ends.
+     */
+    public static final double kHardStopPastSensorRot =
+        (kTotalTravelInches - kSensorTravelInches) / 2.0 * kRotationsPerInch;
+
+    /**
+     * The target may go this far past each sensor before the move ends without it, in rotations
+     * (divide by kRotationsPerInch for inches). Must stay less than kHardStopPastSensorRot so a
+     * dead sensor stops the screws short of the hard stop instead of driving into it.
+     */
+    public static final double kTravelMarginRot = 0.5;
 
     /** Both screws must be within this many rotations of the target before it moves on. */
     public static final double kFollowToleranceRot = 0.25;
@@ -179,7 +218,10 @@ public final class Constants {
     /** Stop both screws when either is further than this from its target, in rotations. */
     public static final double kTrackingFaultRot = 1.5;
 
-    /** A fault condition must last this long (3 checks at 10 ms) before both screws stop. */
+    /**
+     * A fault condition must last this long before both screws stop, so one noisy reading can't
+     * trip it. Should cover a few sync checks (kSyncPeriodSeconds each).
+     */
     public static final double kFaultDebounceSeconds = 0.03;
 
     /** Stop when the target has been unable to move for this long: both screws are stuck. */
@@ -187,7 +229,7 @@ public final class Constants {
 
     /**
      * Longest one extend or retract may run, in seconds, as a last resort if every other check is
-     * fooled. A full move is at least kTravelRotations / kSyncSpeedRps (about 5 s), so this leaves
+     * fooled. A full move takes at least kTravelRotations / kSyncSpeedRps seconds, so this leaves
      * room for one screw waiting on the other. Raise it if travel grows or sync speed drops.
      */
     public static final double kExtensionTimeoutSeconds = 12.0;
@@ -218,7 +260,7 @@ public final class Constants {
     public static final int kShooterFollowerId = 62;
     public static final int kIndexerId = 50;
 
-    /** Closed-loop shooter and indexer speed, in rotations per second (3000 rpm). */
+    /** Closed-loop shooter and indexer speed, in rotations per second, written as RPM / 60. */
     public static final double kShooterVelocityRps = 3000.0 / 60.0;
 
     public static final double kP = 0.7;
@@ -279,7 +321,7 @@ public final class Constants {
     /**
      * How long we keep using the last hub picture after the camera misses a frame. The Limelight
      * is slower than the robot loop, so throwing the picture away immediately would pulse the
-     * shooter off and on. A quarter of a second covers a few missed frames.
+     * shooter off and on. Make it long enough to cover a few missed frames.
      */
     public static final double kMaxSightingAgeSeconds = 0.25;
   }

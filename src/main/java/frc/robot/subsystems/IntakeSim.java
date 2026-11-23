@@ -45,9 +45,6 @@ final class IntakeSim {
    */
   private static final double kInertiaKgM2 = 0.0005;
 
-  /** The hard stops sit this far past each sensor, in rotations. */
-  private static final double kHardStopPastSensorRot = 2.0;
-
   private final Screw m_left;
   private final Screw m_right;
   private final CANdiSimState m_candi;

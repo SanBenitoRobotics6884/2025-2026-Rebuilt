@@ -34,9 +34,9 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Run with {@code ./gradlew autoTiming}. Not part of {@code ./gradlew build}: the simulated
  * motors and swerve drive run on the real clock, so this takes about as long as the autos do
- * (roughly 20 s each).
+ * (roughly one auto period each).
  *
- * <p>An auto fails if it is still running after the 20 s auto period, or if it asks for
+ * <p>An auto fails if it is still running after kAutoPeriodSeconds, or if it asks for
  * {@code extendIntakeAndWait} and the simulated intake never reaches its extended sensor (S2).
  * Each auto starts with the intake retracted and homed, as it would be in a match.
  */
@@ -158,8 +158,8 @@ class AutoTimingTest {
   }
 
   /**
-   * One 10 ms step, kept in step with the real clock: the intake sync check every step, and the
-   * normal 20 ms robot loop (driver station data, commands, subsystems) every other step. This is
+   * One kLoopSeconds step, kept in step with the real clock: the intake sync check every step, and
+   * the normal robot loop (driver station data, commands, subsystems) every other step. This is
    * what {@code Robot} does on the real robot.
    */
   void tick() throws InterruptedException {

@@ -228,7 +228,7 @@ public final class ScrewSync {
   }
 
   /**
-   * One check. Call every loop (10 ms) with fresh encoder readings.
+   * One check. Call every sync check (kSyncPeriodSeconds) with fresh encoder readings.
    *
    * @return what the caller should do with the motors
    */

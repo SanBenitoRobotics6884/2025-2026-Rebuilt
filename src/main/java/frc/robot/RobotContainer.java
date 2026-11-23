@@ -64,7 +64,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("runIntakeCommand", m_intake.runOnce(m_intake::intake));
     NamedCommands.registerCommand("runIntakeBackCommand", m_intake.reverseIntakeCommand());
     NamedCommands.registerCommand("stopIntakeCommand", m_intake.stopRollersCommand());
-    // Extend/retract start the move and end; the intake's 20 ms state machine stops it at the
+    // Extend/retract start the move and end; the intake's sync loop stops it at the
     // limit sensor. The "AndWait" versions hold the auto until the move is finished.
     NamedCommands.registerCommand("deployIntakeCommand", m_intake.extendCommand());
     NamedCommands.registerCommand("undepolyIntakeCommand", m_intake.retractCommand());
@@ -187,7 +187,7 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
-  /** Lead-screw sync check. {@code Robot} runs this every 10 ms. */
+  /** Lead-screw sync check. {@code Robot} runs this every kSyncPeriodSeconds. */
   public void intakeSyncLoop() {
     m_intake.syncLoop();
   }
