@@ -78,7 +78,7 @@ dependencies {
 test {
     // The auto timing test runs in real time, so it has its own task below.
     useJUnitPlatform {
-        excludeTags 'autoTiming'
+        excludeTags 'autoTiming', 'teleopSim'
     }
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
@@ -92,6 +92,25 @@ task autoTiming(type: Test) {
     classpath = sourceSets.test.runtimeClasspath
     useJUnitPlatform {
         includeTags 'autoTiming'
+    }
+    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    testLogging {
+        showStandardStreams = true
+        events 'passed', 'failed'
+        exceptionFormat 'full'
+    }
+    outputs.upToDateWhen { false }
+}
+
+// ./gradlew teleopSim : holds the right trigger in simulated teleop, with and without our hub tag
+// in view, and checks the auto-aim and the fixed-speed fallback. Real time, so not part of build.
+task teleopSim(type: Test) {
+    description = 'Runs the right-trigger shot in simulated teleop and checks auto-aim and fallback.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'teleopSim'
     }
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
     testLogging {
@@ -121,6 +140,7 @@ deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 wpi.java.configureTestTasks(autoTiming)
+wpi.java.configureTestTasks(teleopSim)
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {

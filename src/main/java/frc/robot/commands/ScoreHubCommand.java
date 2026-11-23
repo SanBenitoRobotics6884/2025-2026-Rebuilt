@@ -4,6 +4,8 @@
 
 package frc.robot.commands;
 
+import static frc.robot.Constants.Constants.Outtake.kShooterVelocityRps;
+
 import java.util.Optional;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
@@ -24,7 +26,8 @@ import frc.robot.subsystems.vision.VisionSubsystem.HubSighting;
  * Holds the right trigger's scoring sequence.
  *
  * <p>While this command runs, the driver still drives forward and sideways with the left stick.
- * The right stick does not turn the robot, because this command turns it toward our hub AprilTag.
+ * While our hub AprilTag is in view, the right stick does not turn the robot, because this
+ * command turns it toward the tag.
  * The sequence each cycle is:
  *
  * <ol>
@@ -36,6 +39,10 @@ import frc.robot.subsystems.vision.VisionSubsystem.HubSighting;
  *       and keep accelerating after the command is sent. Feeding during that climb throws the
  *       ball short.
  * </ol>
+ *
+ * <p><b>Fallback:</b> when the Limelight has not seen our hub tag lately, the right stick turns the
+ * robot again and the shooter spins at the fixed kShooterVelocityRps instead. A ball is still fed
+ * only once the wheels reach that speed. The moment the tag is seen again, aiming takes over.
  *
  * <p>The extension stows as soon as the trigger is pulled, so the screws are moving in before a
  * ball is fed. Releasing the trigger stops the shooter and the feeder, and puts the extension
@@ -79,10 +86,20 @@ public class ScoreHubCommand extends Command {
 
     drive.withDeadband(maxSpeedMetersPerSecond * 0.1);
 
-    // Slow mode also wants the drivetrain. Cancel that incoming command instead of letting it
-    // cancel this shot. This command reads the bumper itself and slows down.
-    withInterruptBehavior(InterruptionBehavior.kCancelIncoming);
     addRequirements(drivetrain, outtake, intake);
+  }
+
+  /**
+   * Slow mode also wants the drivetrain. Cancel that incoming command instead of letting it cancel
+   * this shot. This command reads the bumper itself and slows down.
+   *
+   * <p>Overridden here rather than calling {@code withInterruptBehavior()} in the constructor:
+   * that wraps this command in a new one and marks this one as used, so scheduling it from the
+   * trigger would throw and crash the robot code.
+   */
+  @Override
+  public InterruptionBehavior getInterruptionBehavior() {
+    return InterruptionBehavior.kCancelIncoming;
   }
 
   @Override
@@ -102,46 +119,43 @@ public class ScoreHubCommand extends Command {
     double strafe = -driver.getLeftX() * speed;
 
     Optional<HubSighting> sighting = vision.getHubSighting();
+    boolean autoAim = sighting.isPresent();
     double turn;
-    double targetRpm = 0;
-    boolean atTargetRpm = false;
-    boolean feeding = false;
+    double targetRpm;
 
-    if (sighting.isEmpty()) {
-      // No tag lately. Give the right stick back so the driver can turn to go look for it,
-      // and do not spin the shooter or feed a ball at a target we cannot see.
-      turn = MathUtil.applyDeadband(-driver.getRightX(), 0.1) * maxTurnRadiansPerSecond;
-      outtake.stopShooter();
-      outtake.stopIndexer();
-    } else {
+    if (autoAim) {
       HubSighting hub = sighting.get();
-
-      // Step 1. Turn toward the tag. This replaces the right stick until the tag is lost.
+      // Turn toward the tag. This replaces the right stick until the tag is lost.
       turn = HubMath.turnRadiansPerSecond(hub.yawDegrees(), maxTurnRadiansPerSecond);
-
-      // Step 2. The measured distance picks the RPM. Start the wheels now. They will not be at
-      // that speed yet.
+      // The measured distance picks the RPM.
       targetRpm = HubMath.rpmForDistance(hub.distanceMeters());
-      if (targetRpm > 0) {
-        outtake.setShooterRpm(targetRpm);
-      } else {
-        outtake.stopShooter();
-      }
+    } else {
+      // No tag lately (vision down, tag blocked, or out of view). Give the right stick back so the
+      // driver can aim by hand, and fall back to the fixed shooter speed.
+      turn = MathUtil.applyDeadband(-driver.getRightX(), 0.1) * maxTurnRadiansPerSecond;
+      targetRpm = kShooterVelocityRps * 60.0;
+    }
 
-      // Step 3. Feed only once the wheels have reached the RPM we just asked for. While they are
-      // still gaining speed, the feeder stays off.
+    // Start the wheels now; they will not be at that speed yet. Feed only once they have reached
+    // it. The wheels are heavy, and feeding during the climb throws the ball short.
+    boolean atTargetRpm = false;
+    if (targetRpm > 0) {
+      outtake.setShooterRpm(targetRpm);
       atTargetRpm = HubMath.shooterHasReachedRpm(outtake.getShooterRpm(), targetRpm);
-      feeding = atTargetRpm;
-      if (feeding) {
-        outtake.index();
-      } else {
-        outtake.stopIndexer();
-      }
+    } else {
+      outtake.stopShooter();
+    }
+    boolean feeding = atTargetRpm;
+    if (feeding) {
+      outtake.index();
+    } else {
+      outtake.stopIndexer();
     }
 
     drivetrain.setControl(
         drive.withVelocityX(forward).withVelocityY(strafe).withRotationalRate(turn));
 
+    SmartDashboard.putString("Score/Mode", autoAim ? "AUTO_AIM" : "FIXED");
     SmartDashboard.putNumber("Score/TargetRpm", targetRpm);
     SmartDashboard.putNumber("Score/ShooterRpm", outtake.getShooterRpm());
     SmartDashboard.putBoolean("Score/AtTargetRpm", atTargetRpm);

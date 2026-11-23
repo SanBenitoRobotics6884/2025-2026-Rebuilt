@@ -11,6 +11,7 @@ import com.ctre.phoenix6.controls.StrictFollower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -24,10 +25,15 @@ public class OuttakeSubsystem extends SubsystemBase {
   // speed overwrite the shooter speed if both are set in the same cycle.
   private final VelocityVoltage m_indexerRequest = new VelocityVoltage(1);
 
+  /** Simulated wheels. Null on the real robot. */
+  private final OuttakeSim m_sim =
+      RobotBase.isSimulation() ? new OuttakeSim(m_shooterLeader, m_shooterFollower, m_indexer) : null;
+
   /** Creates a new OuttakeSubsystem. */
   public OuttakeSubsystem() {
     var shooterGains = new Slot0Configs();
     shooterGains.kP = kP;
+    shooterGains.kV = kV;
 
     m_shooterLeader.getConfigurator().apply(shooterGains);
     m_shooterFollower.getConfigurator().apply(shooterGains);
@@ -48,6 +54,19 @@ public class OuttakeSubsystem extends SubsystemBase {
     double rotationsPerSecond = rpm / 60.0;
     m_shooterLeader.setControl(m_velocityRequest.withVelocity(rotationsPerSecond));
     m_shooterFollower.setControl(new StrictFollower(kShooterLeaderId));
+  }
+
+  /** Simulation only: spin the simulated wheels. Runs after periodic() every robot loop. */
+  @Override
+  public void simulationPeriodic() {
+    if (m_sim != null) {
+      m_sim.update(0.02);
+    }
+  }
+
+  /** Measured indexer speed, in rotations per second. */
+  public double getIndexerRps() {
+    return m_indexer.getVelocity().getValueAsDouble();
   }
 
   /** Measured shooter speed, in rotations per minute. */

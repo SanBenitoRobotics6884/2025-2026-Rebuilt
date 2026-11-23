@@ -111,14 +111,14 @@ public final class HubMath {
   }
 
   /**
-   * True when the wheels have climbed all the way to {@code targetRpm}.
+   * True when the wheels have climbed to within kShooterReadyToleranceRpm of {@code targetRpm}.
    *
    * <p>This is the only reason to wait before feeding. The shooter keeps accelerating for a while
    * after we ask for a new speed, and a ball that enters during that climb comes out short.
    * {@code measuredRpm} is the speed the motor reports right now, not the speed we asked for.
    */
   public static boolean shooterHasReachedRpm(double measuredRpm, double targetRpm) {
-    return targetRpm > 0 && measuredRpm >= targetRpm;
+    return targetRpm > 0 && measuredRpm >= targetRpm - kShooterReadyToleranceRpm;
   }
 
   /**

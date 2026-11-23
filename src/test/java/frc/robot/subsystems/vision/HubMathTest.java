@@ -38,8 +38,10 @@ class HubMathTest {
   }
 
   @Test
-  void feedWaitsUntilTheWheelsReachTheTargetRpm() {
-    assertFalse(HubMath.shooterHasReachedRpm(2199.0, 2200.0));
+  void feedWaitsUntilTheWheelsAreWithinToleranceOfTheTargetRpm() {
+    double ready = 2200.0 - kShooterReadyToleranceRpm;
+    assertFalse(HubMath.shooterHasReachedRpm(ready - 1.0, 2200.0));
+    assertTrue(HubMath.shooterHasReachedRpm(ready, 2200.0));
     assertTrue(HubMath.shooterHasReachedRpm(2200.0, 2200.0));
     assertTrue(HubMath.shooterHasReachedRpm(2300.0, 2200.0));
     assertFalse(HubMath.shooterHasReachedRpm(2200.0, 0.0));

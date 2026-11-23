@@ -263,7 +263,15 @@ public final class Constants {
     /** Closed-loop shooter and indexer speed, in rotations per second, written as RPM / 60. */
     public static final double kShooterVelocityRps = 3000.0 / 60.0;
 
+    /** Shooter and indexer speed gain, volts per rotation per second of speed error. */
     public static final double kP = 0.7;
+
+    /**
+     * Shooter and indexer velocity feedforward, volts per rotation per second of target speed.
+     * This supplies most of the voltage to hold a speed; without it kP alone always leaves the
+     * wheels short of the target. Matches a Kraken X60 (about 12 V at free speed).
+     */
+    public static final double kV = 0.12;
 
     /** Multiplier on {@link #kShooterVelocityRps} for the slow shooter. */
     public static final double kShooterSlowScale = 0.5;
@@ -317,6 +325,13 @@ public final class Constants {
 
     /** Shooter speed, in rotations per minute, that scored from {@link #kFarDistanceMeters}. */
     public static final double kFarRpm = 3800.0;
+
+    /**
+     * A ball is fed once the measured shooter speed is within this many RPM below the target. A
+     * loaded wheel never quite reaches the exact target, so waiting for it would never feed.
+     * Smaller is more consistent but slower to fire.
+     */
+    public static final double kShooterReadyToleranceRpm = 100.0;
 
     /**
      * How long we keep using the last hub picture after the camera misses a frame. The Limelight

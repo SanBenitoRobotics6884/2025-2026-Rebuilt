@@ -1,0 +1,363 @@
+% Intake and Shooter Control Changes -- Drive Team Brief
+% Build: latexmk -pdf intake-control-changes.tex   (then latexmk -c to remove build files)
+
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.9in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{amssymb}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage[most]{tcolorbox}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{notebg}{HTML}{FFF4D6}
+\definecolor{noteframe}{HTML}{C98A00}
+\newtcolorbox{drivenote}[1]{enhanced, breakable, colback=notebg, colframe=noteframe,
+  boxrule=0.8pt, arc=2pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  fonttitle=\bfseries, title={#1}}
+\titleformat{\section}{\large\bfseries\color{accent}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{14pt}{4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\LTpre}{4pt}
+\setlength{\LTpost}{6pt}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcommand{\dash}[1]{\texttt{#1}}
+\setlist{itemsep=2pt, topsep=3pt}
+\newlist{checklist}{itemize}{1}
+\setlist[checklist]{label=$\square$, itemsep=2pt, topsep=3pt}
+
+\begin{document}
+
+{\LARGE\bfseries\color{accent} Intake and Shooter Control Changes --- Drive Team Brief}\\[4pt]
+{\small 22 November 2026 \quad$\cdot$\quad Branch \texttt{quadecnm/intake\_sensors\_test}}
+
+\section*{Summary}
+
+One press now moves the intake all the way out or all the way in, and two new limit sensors
+stop it. The code checks the two lead screws against each other every 10\,ms and stops both if
+either jams. The intake roller won't spin until the intake is 75\% out, so its wheels can't rub
+on internal parts.
+
+The right trigger now aims at our hub tag and picks the shooter speed from distance. If the
+Limelight can't see the tag, it falls back to the old fixed 3000 RPM shot with the driver aiming.
+Either way it feeds by itself once the wheels are at speed.
+
+It has only run in simulation so far; see the last section for what still needs testing on the
+robot.
+
+\section*{Controls: old vs new}
+
+The extension went from hold-to-move to press-once, and retract moved from D-pad right to D-pad
+up.
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.6cm} L L}
+\toprule
+\textbf{Control} & \textbf{Old (main branch)} & \textbf{New} \\
+\midrule
+\endhead
+D-pad down    & Hold to extend; stops when released  & Press once: extends until fully out (S2 sensor) \\
+D-pad right   & Hold to retract; stops when released & Not used \\
+D-pad up      & Not used                             & Press once: retracts until fully in (S1 sensor) \\
+Left trigger  & Intake roller in                     & Intake roller in, but only spins once the intake is 75\% out \\
+A             & Reverse intake roller                & Same, also waits for 75\% out \\
+B             & Storage roller + indexer             & No change \\
+X             & Reverse indexer                      & No change \\
+Right trigger & Shooter at a fixed 3000 RPM          & Hub tag in view: auto-aim, RPM from distance. No tag: fixed 3000 RPM, driver aims. Either way it feeds once at speed; intake stows during the shot \\
+\bottomrule
+\end{xltabular}
+
+\begin{itemize}
+  \item \textbf{Which controller:} mechanism buttons go on the operator controller if both
+    controllers are connected when the robot boots; otherwise on the driver controller.
+    Unchanged from before.
+  \item \textbf{Right trigger:} see the next section for auto-aim and the fallback.
+\end{itemize}
+
+\section*{Right trigger: auto-aim with fixed-speed fallback}
+
+Hold the right trigger to shoot. The robot picks one of two modes on its own, every 20\,ms,
+depending on whether the Limelight has seen our hub AprilTag in the last quarter second.
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.9cm} L L}
+\toprule
+ & \textbf{Hub tag in view: AUTO\_AIM} & \textbf{No hub tag: FIXED (fallback)} \\
+\midrule
+\endhead
+Turning      & Robot turns itself onto the tag; right stick ignored & Right stick turns the robot; driver aims by hand \\
+Driving      & Left stick drives; left bumper = slow mode            & Same \\
+Shooter speed & Set from the measured distance to the tag (tuned close and far shots, straight line between) & Fixed 3000 RPM, the old right-trigger speed \\
+Feeding      & Automatic, once the wheels are within 100 RPM of the target & Same \\
+Intake       & Stows (retracts) at the start of the shot              & Same \\
+\bottomrule
+\end{xltabular}
+
+\begin{itemize}
+  \item \textbf{Switching:} as soon as the tag is seen, aiming takes over; if it is lost for more
+    than a quarter second, the right stick comes back and the shooter changes to 3000 RPM.
+    Feeding pauses until the wheels reach whichever speed is current.
+  \item \textbf{Old method:} on the main branch the right trigger only spun the shooter at 3000 RPM
+    and the driver fed with B. Now feeding is automatic, and B does not feed while the right
+    trigger is held.
+  \item \textbf{Release:} letting go stops the shooter and feeder. What the intake does next is
+    below.
+  \item \textbf{Aim point:} the robot aims at whichever of our two hub tags is nearer its
+    crosshair, not the middle of the hub. At 2.5\,m the tags are about 8$^\circ$ apart, so shots
+    may land a little left or right of center.
+  \item \textbf{Two controllers:} the operator holds the trigger, but in the fallback the driver's
+    right stick aims. Call out ``no tag'' so the driver knows to aim.
+  \item \textbf{Dashboard:} \dash{Score/Mode} shows AUTO\_AIM or FIXED.
+\end{itemize}
+
+\begin{drivenote}{Intake during a right-trigger shot}
+Pulling the trigger always starts stowing the intake. Whether it goes back out on release depends
+only on where it was \emph{when the trigger was pulled}:
+
+\smallskip
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{5.2cm} L}
+\toprule
+\textbf{Intake when the trigger is pulled} & \textbf{After the trigger is released} \\
+\midrule
+Fully out (S2 closed)            & \textbf{Goes back out to S2} (about 4.3\,s) \\
+Still extending toward S2        & \textbf{Goes back out to S2} \\
+Partly out, stopped              & Stays wherever the stow got to \\
+Retracted, or retracting         & Stays in \\
+\bottomrule
+\end{tabularx}
+
+\smallskip
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Feeding does not wait for the stow.} The first ball feeds about 0.4\,s after the
+    pull, while the intake is still moving in (a full stow takes about 4.2\,s).
+  \item \textbf{Quick release:} let go before the stow finishes and the intake reverses straight
+    back out (if it started fully out).
+  \item \textbf{Intake buttons are ignored while the trigger is held.} To keep the intake in after
+    a shot that started fully out, press D-pad up after releasing.
+  \item \textbf{Intake roller:} if left trigger is still held, the roller restarts once the intake
+    passes 75\% on the way back out.
+  \item \textbf{No re-extend} if the intake is not homed, or if the robot is disabled mid-shot.
+\end{itemize}
+\end{drivenote}
+
+\medskip
+Simulation of the right trigger in teleop:
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.9cm} L L}
+\toprule
+ & \textbf{Facing away from the hub} & \textbf{Facing the hub, 10$^\circ$ off, 2.5\,m} \\
+\midrule
+\endhead
+Mode          & FIXED                         & AUTO\_AIM \\
+Shooter       & 3000 RPM target, reached 3002 & 3002 RPM target, reached 3039 \\
+First feed    & 0.41\,s after the trigger     & 0.42\,s after the trigger \\
+Turning       & Right stick turned the robot  & Turned itself from 10$^\circ$ to 0.6$^\circ$ off the tag \\
+Intake after release & Started in, stayed in     & Started in, stayed in \\
+\bottomrule
+\end{xltabular}
+
+With the intake fully out before the shot, the simulation stowed it to S1 in 4.18\,s while the
+trigger was held, and it went back out to S2 in 4.30\,s after release.
+
+\section*{How the extension works now}
+
+The intake now runs itself to a sensor after one press, instead of chasing fixed motor
+positions while a button is held.
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.8cm} L L}
+\toprule
+ & \textbf{Old} & \textbf{New} \\
+\midrule
+\endhead
+Starting a move    & Hold the button the whole time                   & One press; the move finishes on its own \\
+Where it stops     & Fixed motor positions, guessed from power-up     & The S1 (in) or S2 (out) limit sensor \\
+Two screws         & Right screw just copied the left                 & Each screw checked on its own; the faster one waits for the slower \\
+Speed              & Motor's position control, untuned                & 15 motor turns/s = 3\,in/s; full extend is about 4.3\,s \\
+Changing direction & Release one button, hold the other               & Press the other direction mid-move and it reverses \\
+Disable            & Screws stop                                      & Screws stop and the old move does not resume on enable \\
+\bottomrule
+\end{xltabular}
+
+The nut moves 0.2\,in per screw turn (1/2-5 ACME; the motors drive the screws directly). Sensor
+to sensor is 11.75\,in, about 59 motor turns.
+
+\section*{New sensors}
+
+A CTRE CANdi with two limit sensors replaces the old single limit switch on the roboRIO (DIO 0).
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{3.4cm} >{\raggedright\arraybackslash}p{3.6cm} L}
+\toprule
+\textbf{Sensor} & \textbf{Where} & \textbf{What the code does with it} \\
+\midrule
+\endhead
+CANdi S1 & Intake fully retracted & Ends a retract; zeroes both screw encoders; marks the intake ``homed'' \\
+CANdi S2 & Intake fully extended, 11.75\,in from S1 & Ends an extend; always allows the intake roller \\
+Kraken X60 encoders (both screws) & Built into the screw motors & Tracks position between sensors and checks the two screws stay together \\
+Limelight (PhotonVision) & Camera on the robot & Finds our hub AprilTag for aiming and shot distance; also corrects odometry \\
+\bottomrule
+\end{xltabular}
+
+The CANdi is CAN ID 11 on the roboRIO CAN bus. The hard stops sit about 1/8\,in past each
+sensor.
+
+\section*{New safety precautions}
+
+None of these existed before; the old code had no jam detection, no current limits and no
+roller interlock.
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{3.0cm} L L}
+\toprule
+\textbf{Precaution} & \textbf{Trips when} & \textbf{What happens} \\
+\midrule
+\endhead
+Screws out of step & The two screws are more than 1 turn (0.2\,in) apart & Both stop (fault). The next extend or retract press lines them up first, then moves \\
+Screw off target & Either screw is more than 1.5 turns behind where it was told to be & Both stop (fault), same recovery \\
+Stuck & Neither screw makes progress for 0.5\,s & Both stop (fault), same recovery \\
+Current limits & Always on & Each screw is capped at 40\,A (torque) and 30\,A (battery), so a jam can't wind the actuator up \\
+Missed sensor & A move goes 0.1\,in past where its sensor should have triggered & Stops short of the hard stop; Driver Station warning \\
+Move timeout & One move runs longer than 12\,s & Stops; Driver Station error \\
+Not homed & Powered up away from S1 & Extend blocked; retract moves at most 1.4\,in per press (see next section) \\
+Intake roller interlock & Intake less than 75\% out (and S2 not closed) & Intake roller held off; starts by itself at 75\% \\
+Lost sensor data & Encoder or CANdi readings fail & Screws stop and the intake roller is held off \\
+Disable / start of teleop & Robot disabled, or teleop starts & Extension stops; shooter, indexer and rollers stop; an unfinished auto shot is forgotten \\
+\bottomrule
+\end{xltabular}
+
+A fault stays until someone presses extend or retract; disabling and re-enabling does not clear
+it.
+
+\section*{Power-up and pit procedure}
+
+Power the robot off with the intake fully retracted whenever you can; then it boots ready and
+there is nothing to do.
+
+The robot only knows where the intake is after it has seen the retracted sensor (S1). The lead
+screws can't be pushed by hand, so if it powers up partly out, walk it in with the motors:
+
+\begin{enumerate}
+  \item Check the dashboard: \dash{Intake/Homed} is false and the Driver Station shows ``Intake
+    not homed''. Extend (D-pad down) is ignored in this state.
+  \item Enable the robot in the pit (tethered).
+  \item Press D-pad up. Each press moves the intake in at most 1.4\,in, then stops. Keep
+    pressing; from fully out it takes about 9 presses.
+  \item When S1 triggers, the intake stops, \dash{Intake/Homed} turns true and the positions read
+    0. Everything is normal from then on.
+  \item Before queuing, confirm \dash{Intake/Homed} and \dash{Intake/RetractedLimit} are both
+    true.
+\end{enumerate}
+
+If S1 is broken, step 3 never moves more than 1.4\,in per press, so a dead sensor can't drive it
+far. If the intake looks fully in but \dash{Intake/RetractedLimit} stays false, stop pressing and
+check the sensor.
+
+\section*{Auto and shooting changes}
+
+Autos now fully deploy the intake before collecting; before, the intake never got all the way
+out in auto.
+
+\begin{itemize}
+  \item \textbf{Old auto deploy:} the deploy step actually ran the retract code, and a stop 1\,s
+    later cut it off anyway.
+  \item \textbf{New auto deploy:} the robot waits after its first path until the intake reaches
+    S2, about 4.3\,s, then continues.
+  \item \textbf{Shots stow the intake:} a right-trigger shot, and every auto shot, retracts the
+    intake first. When the trigger is released, it goes back out only if it was fully out when
+    the shot started.
+  \item \textbf{Intake roller during a shot:} it stops as the intake retracts past 75\% and
+    restarts if the intake goes back out.
+\end{itemize}
+
+Auto times in simulation, against the 20\,s limit:
+
+\begin{xltabular}{\linewidth}{L r r}
+\toprule
+\textbf{Auto} & \textbf{Time} & \textbf{Spare} \\
+\midrule
+\endhead
+Rightstart to Mid collcect then shoot                        & 18.84\,s & 1.2\,s \\
+RightStart to Mid collect then pass (USE THIS ONE PLAYOFFS)  & 17.10\,s & 2.9\,s \\
+Left start to Mid that collects and pass to teamside         & 14.47\,s & 5.5\,s \\
+Middle start shoot                                           &  8.72\,s & 11.3\,s \\
+\bottomrule
+\end{xltabular}
+
+The real robot may run slower than the simulation, so watch the first auto closely.
+
+\section*{Dashboard and Driver Station messages}
+
+These are the new values to watch on the dashboard.
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{6.2cm} L}
+\toprule
+\textbf{Dashboard value} & \textbf{Means} \\
+\midrule
+\endhead
+\dash{Intake/State} & REST, EXTENDING, RETRACTING, REALIGNING (lining the screws up) or FAULT \\
+\dash{Intake/Fault} & Why it stopped: SCREWS\_APART, LEFT\_OFF\_TARGET, RIGHT\_OFF\_TARGET or NO\_PROGRESS \\
+\dash{Intake/Homed} & True once S1 has been seen since power-up \\
+\dash{Intake/RetractedLimit} / \dash{Intake/ExtendedLimit} & S1 / S2 sensor closed \\
+\dash{Intake/RollerAllowed} & Intake roller is allowed to spin (75\% out or S2 closed) \\
+\dash{Intake/ExtendedPercent} & How far out the intake is \\
+\dash{Intake/LeftPos}, \dash{Intake/RightPos}, \dash{Intake/Apart} & Each screw's position in motor turns, and the gap between them \\
+\dash{Intake/SensorsOK} & False means the encoder or CANdi readings failed \\
+\dash{Score/TargetRpm}, \dash{Score/ShooterRpm}, \dash{Score/Feeding} & Shot RPM wanted vs measured, and whether a ball is being fed; \dash{Score/Mode} shows AUTO\_AIM or FIXED (fallback) \\
+\bottomrule
+\end{xltabular}
+
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{6.2cm} L}
+\toprule
+\textbf{Driver Station message} & \textbf{What to do} \\
+\midrule
+\endhead
+``Intake screws stopped, \ldots'' & A jam or the screws got out of step. Clear the jam, then press extend or retract; it lines the screws up first \\
+``Intake not homed \ldots'' & Walk the intake in with D-pad up (Power-up and pit procedure) \\
+``Intake not homed: extend ignored \ldots'' & Same; extend works after S1 is reached \\
+``Intake reached the travel limit without its CANdi sensor triggering \ldots'' & A sensor missed. Check its wiring before the next match \\
+``Intake move timed out \ldots'' & A move took over 12\,s. Check for binding \\
+\bottomrule
+\end{xltabular}
+
+\section*{Still to test on the robot}
+
+Everything above has run only in simulation. Check these with the robot on blocks before a
+match:
+
+\begin{checklist}
+  \item S1 and S2 read correctly on the dashboard (closed when the intake is at that end, not
+    reversed)
+  \item \dash{Intake/LeftPos} and \dash{Intake/RightPos} both go up while extending
+  \item About 5 motor turns per inch, and about 59 at S2
+  \item Several extends and retracts at full speed with no ``screws stopped'' fault; actuator is
+    rated for 3\,in/s
+  \item The screws coast less than 1/8\,in past each sensor (the hard stop)
+  \item Power up partly out, then walk it in with D-pad up; repeat with S1 unplugged and confirm
+    each press moves at most 1.4\,in
+  \item Hold left trigger during an extend: the roller starts at about 75\% out and stops when
+    the intake retracts past it
+  \item Hub aiming and shot RPM: the distance/RPM pairs are placeholders and need tuning on the
+    field
+  \item Shooter reaches about 3000 RPM and holds it (new speed feedforward; assumes Kraken X60
+    shooter motors)
+  \item Cover the camera, hold the right trigger: \dash{Score/Mode} reads FIXED, the right stick
+    turns the robot, and it feeds once at speed
+  \item Uncover the camera mid-shot: it switches to AUTO\_AIM and turns onto the tag
+  \item Extend fully, hold the right trigger until the intake is in, release: it goes back out to
+    S2. Repeat starting retracted: it stays in
+  \item Watch a ball feed while the intake is still stowing; confirm nothing catches
+  \item Check where auto-aim shots land relative to the hub center (it aims at one of the two
+    tags)
+  \item Run each auto on the real robot and time it, especially ``Rightstart to Mid collcect then
+    shoot''
+\end{checklist}
+
+\end{document}
