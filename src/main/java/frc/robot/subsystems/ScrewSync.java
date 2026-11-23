@@ -99,6 +99,10 @@ public final class ScrewSync {
 
   private final Config m_config;
 
+  /** Current travel limits. Start as the config's; narrowed while the intake is not homed. */
+  private double m_minTarget;
+  private double m_maxTarget;
+
   private Mode m_mode = Mode.IDLE;
   private Fault m_fault = Fault.NONE;
   private String m_faultDetail = "";
@@ -121,6 +125,30 @@ public final class ScrewSync {
 
   public ScrewSync(Config config) {
     m_config = config;
+    resetTravelLimits();
+  }
+
+  /**
+   * Use these travel limits instead of the config's until {@link #resetTravelLimits()}. Takes
+   * effect on the next {@link #step}, so set it before starting a move.
+   */
+  public void setTravelLimits(double minTarget, double maxTarget) {
+    m_minTarget = minTarget;
+    m_maxTarget = maxTarget;
+  }
+
+  /** Go back to the config's travel limits. */
+  public void resetTravelLimits() {
+    m_minTarget = m_config.minTarget;
+    m_maxTarget = m_config.maxTarget;
+  }
+
+  public double minTarget() {
+    return m_minTarget;
+  }
+
+  public double maxTarget() {
+    return m_maxTarget;
   }
 
   public Mode mode() {
@@ -254,7 +282,7 @@ public final class ScrewSync {
     }
 
     // 2. Advance only when both screws are on target. Otherwise hold so the slow one catches up.
-    double limit = m_direction > 0 ? m_config.maxTarget : m_config.minTarget;
+    double limit = m_direction > 0 ? m_maxTarget : m_minTarget;
     boolean atLimit = m_direction > 0 ? m_leftTarget >= limit : m_leftTarget <= limit;
     if (atLimit) {
       return leftArrived && rightArrived ? Result.DONE : Result.RUNNING;

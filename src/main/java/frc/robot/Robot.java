@@ -37,6 +37,7 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledInit() {
     robotContainer.stopIntakeExtension();
+    robotContainer.stopMechanisms();
   }
 
   @Override
@@ -64,6 +65,9 @@ public class Robot extends TimedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().cancel(autonomousCommand);
     }
+    // Covers going straight from auto to teleop with no disabled period in between, which
+    // practice mode can do. An intake extend or retract in progress is left to finish.
+    robotContainer.stopMechanisms();
   }
 
   @Override

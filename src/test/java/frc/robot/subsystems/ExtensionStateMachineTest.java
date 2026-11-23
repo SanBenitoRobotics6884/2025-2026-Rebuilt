@@ -19,9 +19,10 @@ import frc.robot.subsystems.ExtensionStateMachine.State;
 class ExtensionStateMachineTest {
   static final double kDt = 0.01;
   static final double kTravel = 40.0;
+  static final double kUnhomedStep = 7.0;
 
   final ExtensionStateMachine m_machine =
-      new ExtensionStateMachine(ScrewSyncTest.config(), 15.0);
+      new ExtensionStateMachine(ScrewSyncTest.config(), 15.0, kUnhomedStep);
   double m_left;
   double m_right;
   double m_leftSpeed = 20.0;
@@ -155,5 +156,89 @@ class ExtensionStateMachineTest {
     tick();
     m_machine.stop();
     assertEquals(State.REST, tick());
+  }
+
+  /** Powered up away from S1: the encoders read {@code position}, but the robot does not trust it. */
+  void powerUpNotHomedAt(double position) {
+    m_left = position;
+    m_right = position;
+    m_machine.setHomed(false);
+  }
+
+  @Test
+  void notHomedRetractStopsAfterOneStepWithoutASoftLimitWarning() {
+    powerUpNotHomedAt(20.0);
+    retract();
+    assertEquals(State.RETRACTING, tick());
+    assertEquals(State.REST, runUntilStopped(5));
+    assertEquals(20.0 - kUnhomedStep, m_left, 0.3);
+    assertEquals(20.0 - kUnhomedStep, m_right, 0.3);
+    assertFalse(m_machine.lastMoveHitSoftLimit());
+    assertFalse(m_machine.isHomed());
+  }
+
+  @Test
+  void eachRetractPressWalksAnotherStepUntilS1() {
+    powerUpNotHomedAt(20.0);
+    retract();
+    runUntilStopped(5);
+    retract();
+    runUntilStopped(5);
+    assertEquals(20.0 - 2 * kUnhomedStep, m_left, 0.5);
+
+    retract(); // 6 rotations left: S1 ends this step early
+    assertEquals(State.REST, runUntilStopped(5));
+    assertTrue(retracted());
+    assertFalse(m_machine.lastMoveHitSoftLimit());
+  }
+
+  @Test
+  void notHomedRefusesExtend() {
+    powerUpNotHomedAt(20.0);
+    extend();
+    assertEquals(State.REST, m_machine.state());
+    assertTrue(m_machine.takeExtendRefused());
+    assertFalse(m_machine.takeExtendRefused()); // reported once
+    assertEquals(State.REST, tick());
+    assertEquals(20.0, m_left, 1e-9);
+  }
+
+  @Test
+  void deadS1SensorNeverMovesMoreThanOneStepPerPress() {
+    powerUpNotHomedAt(3.0); // S1 would be at 0, but pretend it never triggers
+    m_machine.requestRetract(m_left, m_right, false, m_now);
+    for (int i = 0; i < 500 && m_machine.isDriving(); i++) {
+      m_now += kDt;
+      m_machine.update(m_left, m_right, false, false, m_now);
+      m_left = ScrewSyncTest.Plant.approach(m_left, m_machine.leftTarget(), m_leftSpeed * kDt);
+      m_right = ScrewSyncTest.Plant.approach(m_right, m_machine.rightTarget(), m_rightSpeed * kDt);
+    }
+    assertEquals(State.REST, m_machine.state());
+    assertEquals(3.0 - kUnhomedStep, m_left, 0.3);
+  }
+
+  @Test
+  void homingRestoresNormalLimitsAndExtend() {
+    powerUpNotHomedAt(5.0);
+    retract();
+    assertEquals(State.REST, runUntilStopped(5));
+    assertTrue(retracted());
+    m_machine.setHomed(true); // IntakeSubsystem does this after zeroing at S1
+
+    extend();
+    assertEquals(State.EXTENDING, tick());
+    assertEquals(State.REST, runUntilStopped(10));
+    assertTrue(extended());
+  }
+
+  @Test
+  void notHomedJamStillFaults() {
+    powerUpNotHomedAt(20.0);
+    retract();
+    for (int i = 0; i < 10; i++) {
+      tick();
+    }
+    m_leftSpeed = 0;
+    assertEquals(State.FAULT, runUntilStopped(2));
   }
 }

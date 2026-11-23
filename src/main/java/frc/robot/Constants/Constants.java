@@ -192,6 +192,14 @@ public final class Constants {
      */
     public static final double kExtensionTimeoutSeconds = 12.0;
 
+    /**
+     * Furthest one retract press may move the screws before the intake is homed, in rotations.
+     * The encoders zero at power-up, so until the retracted sensor (S1) has been seen the robot
+     * does not know where the intake really is. Each D-pad-up press walks it in this far, so a
+     * dead S1 sensor can never drive it the full travel. Reaching S1 homes it.
+     */
+    public static final double kUnhomedRetractStepRot = 7.0;
+
     /** How often the sync check runs, in seconds. Must be 0.02 or less. */
     public static final double kSyncPeriodSeconds = 0.01;
 

@@ -21,6 +21,12 @@ package frc.robot.subsystems;
  *   <li>{@link State#FAULT}: a screw jammed or the two got out of step. Both are stopped. The next
  *       extend or retract request re-aligns them first.
  * </ul>
+ *
+ * <p><b>Homing.</b> The encoders zero at power-up, so "0" only means retracted if the intake was
+ * retracted then. Until S1 has been seen, the intake is <i>not homed</i>: extend requests are
+ * refused, and each retract request moves the screws in at most {@code unhomedStepRot}. The pit
+ * crew walks the intake in one press at a time, and a broken S1 can never drive it the full
+ * travel. The caller marks it homed (and zeroes the encoders) when a retract reaches S1.
  */
 public final class ExtensionStateMachine {
   public enum State {
@@ -33,6 +39,12 @@ public final class ExtensionStateMachine {
 
   private final ScrewSync m_sync;
   private final double m_timeoutSeconds;
+  private final double m_unhomedStepRot;
+
+  /** False until S1 has been seen since power-up. See the class comment. */
+  private boolean m_homed = true;
+  /** Set when an extend was refused because the intake is not homed. Cleared when read. */
+  private boolean m_extendRefused;
 
   private State m_state = State.REST;
   /** Direction to move once re-aligned: +1 extend, -1 retract. */
@@ -43,10 +55,35 @@ public final class ExtensionStateMachine {
   private boolean m_timedOut;
   private boolean m_softLimitReached;
 
-  /** @param timeoutSeconds last-resort cap on one move, in case every other check is fooled */
-  public ExtensionStateMachine(ScrewSync.Config config, double timeoutSeconds) {
+  /**
+   * @param timeoutSeconds last-resort cap on one move, in case every other check is fooled
+   * @param unhomedStepRot furthest one retract request may move the screws while not homed
+   */
+  public ExtensionStateMachine(
+      ScrewSync.Config config, double timeoutSeconds, double unhomedStepRot) {
     m_sync = new ScrewSync(config);
     m_timeoutSeconds = timeoutSeconds;
+    m_unhomedStepRot = unhomedStepRot;
+  }
+
+  /** Whether the encoders' 0 is known to be fully retracted. Starts true. */
+  public boolean isHomed() {
+    return m_homed;
+  }
+
+  /**
+   * Mark the intake homed (the encoders were just zeroed at S1) or not homed (powered up away
+   * from S1). Takes effect on the next request.
+   */
+  public void setHomed(boolean homed) {
+    m_homed = homed;
+  }
+
+  /** True once after an extend was refused because the intake is not homed. */
+  public boolean takeExtendRefused() {
+    boolean refused = m_extendRefused;
+    m_extendRefused = false;
+    return refused;
   }
 
   public State state() {
@@ -164,7 +201,8 @@ public final class ExtensionStateMachine {
           startSynced(m_pendingDirection, leftPos, rightPos, nowSeconds);
         }
       } else {
-        m_softLimitReached = true;
+        // Before homing, stopping at the step limit is the plan, not a missed sensor.
+        m_softLimitReached = m_homed;
         m_state = State.REST;
       }
     }
@@ -173,6 +211,11 @@ public final class ExtensionStateMachine {
 
   private void request(
       int direction, double leftPos, double rightPos, boolean alreadyThere, double nowSeconds) {
+    if (direction > 0 && !m_homed) {
+      // The travel limit means nothing until S1 has zeroed the encoders.
+      m_extendRefused = true;
+      return;
+    }
     State target = direction > 0 ? State.EXTENDING : State.RETRACTING;
     if (m_state == target) {
       return;
@@ -204,6 +247,13 @@ public final class ExtensionStateMachine {
   private void startSynced(int direction, double leftPos, double rightPos, double nowSeconds) {
     m_lastDirection = direction;
     m_moveStartSeconds = nowSeconds;
+    if (direction < 0 && !m_homed) {
+      // Same start point ScrewSync uses for a retract: the screw that is further out.
+      double start = Math.max(leftPos, rightPos);
+      m_sync.setTravelLimits(start - m_unhomedStepRot, m_sync.maxTarget());
+    } else {
+      m_sync.resetTravelLimits();
+    }
     m_sync.startSynced(leftPos, rightPos, direction, nowSeconds);
     m_state = direction > 0 ? State.EXTENDING : State.RETRACTING;
   }

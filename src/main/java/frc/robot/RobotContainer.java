@@ -192,6 +192,18 @@ public class RobotContainer {
     m_intake.syncLoop();
   }
 
+  /**
+   * Stop the shooter, indexer and rollers and forget any unfinished shot. The motor controllers
+   * resume their last command when the robot is enabled again, so anything an auto started and
+   * never stopped would otherwise start up again at the beginning of teleop.
+   */
+  public void stopMechanisms() {
+    m_outtake.stopShooter();
+    m_outtake.stopIndexer();
+    m_intake.stopRollers();
+    m_intake.clearShotMemory();
+  }
+
   /** Stops any extension move so enabling again never resumes an old one. */
   public void stopIntakeExtension() {
     m_intake.stopExtension();

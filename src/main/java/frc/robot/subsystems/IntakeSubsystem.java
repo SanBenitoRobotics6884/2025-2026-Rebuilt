@@ -59,7 +59,8 @@ public class IntakeSubsystem extends SubsystemBase {
               kNoProgressSeconds,
               -kTravelMarginRot,
               kTravelRotations + kTravelMarginRot),
-          kExtensionTimeoutSeconds);
+          kExtensionTimeoutSeconds,
+          kUnhomedRetractStepRot);
 
   // Latest readings, refreshed by syncLoop().
   private double m_leftPos;
@@ -88,6 +89,18 @@ public class IntakeSubsystem extends SubsystemBase {
     // retract that reaches S1 sets both to 0 again.
     zeroScrews();
     stopScrews();
+
+    // 0 only means "retracted" if the intake was retracted at power-up. If S1 is not closed (or
+    // can't be read), retract walks in a few rotations per press until S1 homes it.
+    boolean atRetracted = m_retractedSignal.waitForUpdate(0.25).getValue();
+    boolean homed = m_retractedSignal.getStatus().isOK() && atRetracted;
+    m_extension.setHomed(homed);
+    if (!homed) {
+      DriverStation.reportWarning(
+          "Intake not homed: it was not at the retracted sensor (S1) at power-up. Press retract"
+              + " to walk it in " + kUnhomedRetractStepRot + " rotations at a time until S1.",
+          false);
+    }
   }
 
   /** S1: the intake is fully retracted. */
@@ -142,7 +155,17 @@ public class IntakeSubsystem extends SubsystemBase {
       }
       if (before == State.RETRACTING && m_retracted) {
         zeroScrews();
+        m_extension.setHomed(true);
       }
+    }
+    if (!m_extension.isHomed() && m_sensorsOk && m_retracted && !m_extension.isDriving()) {
+      // Sitting on S1 (e.g. the power-up read failed): that is home, no move needed.
+      zeroScrews();
+      m_extension.setHomed(true);
+    }
+    if (m_extension.takeExtendRefused()) {
+      DriverStation.reportWarning(
+          "Intake not homed: extend ignored. Retract to the S1 sensor first.", false);
     }
 
     if (m_extension.isDriving()) {
@@ -164,6 +187,7 @@ public class IntakeSubsystem extends SubsystemBase {
   public void periodic() {
     SmartDashboard.putString("Intake/State", m_extension.state().name());
     SmartDashboard.putString("Intake/Fault", m_extension.fault().name());
+    SmartDashboard.putBoolean("Intake/Homed", m_extension.isHomed());
     SmartDashboard.putNumber("Intake/LeftPos", m_leftPos);
     SmartDashboard.putNumber("Intake/RightPos", m_rightPos);
     SmartDashboard.putNumber("Intake/Apart", m_leftPos - m_rightPos);
@@ -216,6 +240,16 @@ public class IntakeSubsystem extends SubsystemBase {
     if (restore) {
       extend();
     }
+  }
+
+  /**
+   * Forget a shot that never finished, e.g. an auto that ended between starting and stopping the
+   * shooter. Without this, the next shot would skip its retract and might extend on release
+   * because of what the unfinished shot remembered. Does not move the screws.
+   */
+  public void clearShotMemory() {
+    m_holdingShotRetraction = false;
+    m_restoreExtensionAfterShot = false;
   }
 
   public void intake() {
