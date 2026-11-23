@@ -162,7 +162,7 @@ public final class Constants {
      * How fast the shared target moves while both screws keep up, in motor rotations per second.
      * The intake is slower than this whenever one screw has to wait for the other.
      */
-    public static final double kSyncSpeedRps = 10.0;
+    public static final double kSyncSpeedRps = 15.0;
 
     /** Rough full travel, retracted to extended, in motor rotations. Measure and update. */
     public static final double kTravelRotations = 70.0;
@@ -187,7 +187,7 @@ public final class Constants {
 
     /**
      * Longest one extend or retract may run, in seconds, as a last resort if every other check is
-     * fooled. A full move is at least kTravelRotations / kSyncSpeedRps (about 7 s), so this leaves
+     * fooled. A full move is at least kTravelRotations / kSyncSpeedRps (about 5 s), so this leaves
      * room for one screw waiting on the other. Raise it if travel grows or sync speed drops.
      */
     public static final double kExtensionTimeoutSeconds = 12.0;

@@ -20,6 +20,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -69,6 +70,9 @@ public class IntakeSubsystem extends SubsystemBase {
   private boolean m_extended;
   private boolean m_sensorsOk;
 
+  /** Simulated screws and sensors. Null on the real robot. */
+  private final IntakeSim m_sim;
+
   /** True from the first retract of a shot until that shot puts the screws back. */
   private boolean m_holdingShotRetraction;
   /** Latched on the first retract of a shot. True only when that shot started fully extended. */
@@ -89,6 +93,19 @@ public class IntakeSubsystem extends SubsystemBase {
     // retract that reaches S1 sets both to 0 again.
     zeroScrews();
     stopScrews();
+
+    // In simulation, fake screws and sensors stand in for the real ones. Created before the S1
+    // read below so the simulated sensor already shows where the intake starts.
+    m_sim =
+        RobotBase.isSimulation()
+            ? new IntakeSim(
+                m_leftScrew,
+                m_rightScrew,
+                m_candi,
+                kLeftScrewInverted,
+                rightInverted,
+                IntakeSim.startRotationsFromEnvironment())
+            : null;
 
     // 0 only means "retracted" if the intake was retracted at power-up. If S1 is not closed (or
     // can't be read), retract walks in a few rotations per press until S1 homes it.
@@ -124,6 +141,10 @@ public class IntakeSubsystem extends SubsystemBase {
    * and then either moves both on together or stops both.
    */
   public void syncLoop() {
+    if (m_sim != null) {
+      // Simulation: move the fake screws at the same 10 ms rate the real encoders report at.
+      m_sim.update(kSyncPeriodSeconds);
+    }
     readSensors();
     double now = Timer.getFPGATimestamp();
 
@@ -197,6 +218,28 @@ public class IntakeSubsystem extends SubsystemBase {
     SmartDashboard.putBoolean("Intake/ExtendedLimit", m_extended);
     SmartDashboard.putBoolean("Intake/SensorsOK", m_sensorsOk);
     SmartDashboard.putBoolean("Intake/RestoreAfterShot", m_restoreExtensionAfterShot);
+  }
+
+  /**
+   * Simulation only: put the intake back to fully retracted and homed, with everything stopped,
+   * so a test can start the next auto from a known state. Does nothing on the real robot.
+   */
+  public void simResetRetracted() {
+    if (m_sim == null) {
+      return;
+    }
+    m_extension.stop();
+    m_extension.setHomed(true);
+    stopScrews();
+    stopRollers();
+    clearShotMemory();
+    m_sim.setPosition(0.0);
+    zeroScrews();
+  }
+
+  /** Simulation only: where the simulated intake really is, in rotations. NaN on the robot. */
+  public double simPosition() {
+    return m_sim == null ? Double.NaN : m_sim.position();
   }
 
   /** Start extending. The sync loop stops it when S2 triggers. Safe to call from auto. */

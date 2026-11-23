@@ -204,6 +204,20 @@ public class RobotContainer {
     m_intake.clearShotMemory();
   }
 
+  /**
+   * Simulation only: stop everything and put the simulated intake back to retracted and homed, so a
+   * test can run the next auto from a known start. Does nothing on the real robot.
+   */
+  public void simResetForAuto() {
+    stopMechanisms();
+    m_intake.simResetRetracted();
+  }
+
+  /** For tests in this package. */
+  IntakeSubsystem intake() {
+    return m_intake;
+  }
+
   /** Stops any extension move so enabling again never resumes an old one. */
   public void stopIntakeExtension() {
     m_intake.stopExtension();

@@ -76,8 +76,30 @@ dependencies {
 }
 
 test {
-    useJUnitPlatform()
+    // The auto timing test runs in real time, so it has its own task below.
+    useJUnitPlatform {
+        excludeTags 'autoTiming'
+    }
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+}
+
+// ./gradlew autoTiming : runs every PathPlanner auto in simulation and prints how long each
+// takes. Real time, so it takes about 20 s per auto. Not part of ./gradlew build.
+task autoTiming(type: Test) {
+    description = 'Runs every PathPlanner auto in simulation and reports how long each takes.'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'autoTiming'
+    }
+    systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    testLogging {
+        showStandardStreams = true
+        events 'passed', 'failed'
+        exceptionFormat 'full'
+    }
+    outputs.upToDateWhen { false }
 }
 
 // Simulation configuration (e.g. environment variables).
@@ -98,6 +120,7 @@ jar {
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
+wpi.java.configureTestTasks(autoTiming)
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
