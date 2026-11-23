@@ -145,7 +145,12 @@ public class RobotContainer {
     m_driverController.start().and(m_driverController.x())
         .whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-    m_driverController.y().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+    // Resetting the field-centric heading moves the tracked pose, so the right trigger stops
+    // trusting it (POSE mode) until vision agrees with it again.
+    m_driverController.y().onTrue(drivetrain.runOnce(() -> {
+      drivetrain.seedFieldCentricFromHere();
+      vision.forgetTrustedPose();
+    }));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }

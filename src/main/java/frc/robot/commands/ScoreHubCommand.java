@@ -12,6 +12,9 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -19,6 +22,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.OuttakeSubsystem;
 import frc.robot.subsystems.vision.HubMath;
+import frc.robot.subsystems.vision.HubMath.ShotMode;
 import frc.robot.subsystems.vision.VisionSubsystem;
 import frc.robot.subsystems.vision.VisionSubsystem.HubSighting;
 
@@ -26,23 +30,31 @@ import frc.robot.subsystems.vision.VisionSubsystem.HubSighting;
  * Holds the right trigger's scoring sequence.
  *
  * <p>While this command runs, the driver still drives forward and sideways with the left stick.
- * While our hub AprilTag is in view, the right stick does not turn the robot, because this
- * command turns it toward the tag.
+ * While any of our hub's AprilTags is in view, the right stick does not turn the robot, because
+ * this command turns it toward the middle of the hub.
  * The sequence each cycle is:
  *
  * <ol>
- *   <li>Read the latest hub tag from the Limelight.
- *   <li>Turn to put that tag in the center of the camera.
- *   <li>Measure the distance and spin the shooter up to the RPM that distance needs. The distance
+ *   <li>Read where the middle of our hub is, from whichever of its tags the Limelight sees.
+ *   <li>Turn until the middle of the hub is straight ahead.
+ *   <li>Measure the distance to the middle of the hub and spin the shooter up to the RPM that
+ *       distance needs. The distance
  *       is used as measured. Spinning starts immediately so the wheels can gain speed.
  *   <li>Feed a ball only after the measured wheel speed reaches that RPM. The wheels are heavy
  *       and keep accelerating after the command is sent. Feeding during that climb throws the
  *       ball short.
  * </ol>
  *
- * <p><b>Fallback:</b> when the Limelight has not seen our hub tag lately, the right stick turns the
- * robot again and the shooter spins at the fixed kShooterVelocityRps instead. A ball is still fed
- * only once the wheels reach that speed. The moment the tag is seen again, aiming takes over.
+ * <p><b>Alliance zone:</b> scoring is only legal from our ALLIANCE ZONE (rule G407). Outside it,
+ * or when the robot cannot tell, the shot is always FIXED (driver aims, kShooterVelocityRps),
+ * which is also the pass shot. Inside it:
+ *
+ * <p><b>Fallbacks:</b> when no hub tag has been seen within kMaxSightingAgeSeconds, the right
+ * stick turns the robot again. If a vision pose agreed with the robot's tracked field position
+ * within kPoseFallbackMaxAgeSeconds (POSE mode), the distance from that position to the hub's middle
+ * still sets the RPM. Otherwise (FIXED mode) the shooter spins at kShooterVelocityRps. A ball is
+ * fed only once the wheels reach the RPM in every mode. The moment a hub tag is seen again,
+ * aiming takes over.
  *
  * <p>The extension stows as soon as the trigger is pulled, so the screws are moving in before a
  * ball is fed. Releasing the trigger stops the shooter and the feeder, and puts the extension
@@ -119,21 +131,47 @@ public class ScoreHubCommand extends Command {
     double strafe = -driver.getLeftX() * speed;
 
     Optional<HubSighting> sighting = vision.getHubSighting();
-    boolean autoAim = sighting.isPresent();
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    boolean red = alliance.isPresent() && alliance.get() == Alliance.Red;
+    // Scoring is only legal from our ALLIANCE ZONE (G407). Without an alliance we cannot tell.
+    boolean sightingInZone =
+        alliance.isPresent()
+            && sighting.isPresent()
+            && HubMath.inAllianceZone(sighting.get().robotFieldPosition(), red);
+    boolean poseInZone =
+        alliance.isPresent()
+            && HubMath.inAllianceZone(drivetrain.getPose().getTranslation(), red);
+    double poseDistance = poseDistanceToHubMeters();
+    ShotMode mode =
+        HubMath.shotMode(
+            sighting.isPresent(),
+            sightingInZone,
+            vision.secondsSinceTrustedPose(),
+            poseDistance,
+            poseInZone);
     double turn;
     double targetRpm;
 
-    if (autoAim) {
-      HubSighting hub = sighting.get();
-      // Turn toward the tag. This replaces the right stick until the tag is lost.
-      turn = HubMath.turnRadiansPerSecond(hub.yawDegrees(), maxTurnRadiansPerSecond);
-      // The measured distance picks the RPM.
-      targetRpm = HubMath.rpmForDistance(hub.distanceMeters());
-    } else {
-      // No tag lately (vision down, tag blocked, or out of view). Give the right stick back so the
-      // driver can aim by hand, and fall back to the fixed shooter speed.
-      turn = MathUtil.applyDeadband(-driver.getRightX(), 0.1) * maxTurnRadiansPerSecond;
-      targetRpm = kShooterVelocityRps * 60.0;
+    switch (mode) {
+      case AUTO_AIM -> {
+        HubSighting hub = sighting.get();
+        // Turn toward the middle of the hub. This replaces the right stick until no tag is seen.
+        turn = HubMath.turnRadiansPerSecond(hub.yawDegrees(), maxTurnRadiansPerSecond);
+        // The measured distance picks the RPM.
+        targetRpm = HubMath.rpmForDistance(hub.distanceMeters());
+      }
+      case POSE -> {
+        // No hub tag in view, but the robot's tracked position is recent: the driver aims, and
+        // the distance from that position picks the RPM.
+        turn = stickTurn();
+        targetRpm = HubMath.rpmForDistance(poseDistance);
+      }
+      default -> {
+        // Outside our zone (a pass), or no way to tell where we are: the driver aims and the
+        // shooter runs at the fixed speed.
+        turn = stickTurn();
+        targetRpm = kShooterVelocityRps * 60.0;
+      }
     }
 
     // Start the wheels now; they will not be at that speed yet. Feed only once they have reached
@@ -155,7 +193,9 @@ public class ScoreHubCommand extends Command {
     drivetrain.setControl(
         drive.withVelocityX(forward).withVelocityY(strafe).withRotationalRate(turn));
 
-    SmartDashboard.putString("Score/Mode", autoAim ? "AUTO_AIM" : "FIXED");
+    SmartDashboard.putString("Score/Mode", mode.name());
+    SmartDashboard.putBoolean("Score/InAllianceZone", sightingInZone || poseInZone);
+    SmartDashboard.putNumber("Score/PoseDistanceMeters", poseDistance);
     SmartDashboard.putNumber("Score/TargetRpm", targetRpm);
     SmartDashboard.putNumber("Score/ShooterRpm", outtake.getShooterRpm());
     SmartDashboard.putBoolean("Score/AtTargetRpm", atTargetRpm);
@@ -174,6 +214,24 @@ public class ScoreHubCommand extends Command {
   @Override
   public boolean isFinished() {
     return false;
+  }
+
+  /** Right stick turning, for when the driver aims. */
+  private double stickTurn() {
+    return MathUtil.applyDeadband(-driver.getRightX(), 0.1) * maxTurnRadiansPerSecond;
+  }
+
+  /**
+   * Floor distance from the robot's tracked field position to the middle of our hub, or NaN when
+   * the alliance is not known yet.
+   */
+  private double poseDistanceToHubMeters() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isEmpty()) {
+      return Double.NaN;
+    }
+    Translation2d hub = HubMath.hubCenter(alliance.get() == Alliance.Red);
+    return hub.getDistance(drivetrain.getPose().getTranslation());
   }
 
   private double driveSpeed() {

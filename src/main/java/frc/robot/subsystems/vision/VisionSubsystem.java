@@ -6,9 +6,12 @@ package frc.robot.subsystems.vision;
 
 import static frc.robot.Constants.Constants.Vision.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import edu.wpi.first.apriltag.AprilTag;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -21,6 +24,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -88,18 +92,23 @@ public class VisionSubsystem extends SubsystemBase {
       double ambiguity) {}
 
   /**
-   * One look at our alliance's hub tag. {@code yawDegrees} is how far the tag sits from the center
-   * of the picture: positive is to the right. {@code distanceMeters} is the floor distance from
-   * the robot center to that tag, or not-a-number if the camera could not measure it.
+   * One look at our alliance's hub, worked out from whichever of its tags were in view (any face).
+   * Yaw and distance are to the MIDDLE of the hub, measured from the robot center.
    *
-   * @param tagId the AprilTag id. Red hub tags are RED_HUB_FIDUCIAL_L/R. Blue hub tags are
-   *     BLUE_HUB_FIDUCIAL_L/R
-   * @param yawDegrees degrees from the crosshair, positive to the right
-   * @param distanceMeters floor distance in meters, or not-a-number when it could not be measured
-   * @param timestampSeconds when the robot code last saw this tag, on the RoboRIO clock
+   * @param tagId one of the hub tags used: the one with the lowest ambiguity
+   * @param tagCount how many hub tags were used; their estimates of the hub's middle are averaged
+   * @param yawDegrees degrees the hub's middle is off straight ahead, positive to the right
+   * @param distanceMeters floor distance from the robot center to the hub's middle, in meters
+   * @param robotFieldPosition where the robot center is on the field, from the hub tags alone
+   * @param timestampSeconds when the robot code saw it, on the RoboRIO clock
    */
   public record HubSighting(
-      int tagId, double yawDegrees, double distanceMeters, double timestampSeconds) {}
+      int tagId,
+      int tagCount,
+      double yawDegrees,
+      double distanceMeters,
+      Translation2d robotFieldPosition,
+      double timestampSeconds) {}
 
   private final CommandSwerveDrivetrain drivetrain;
 
@@ -121,6 +130,10 @@ public class VisionSubsystem extends SubsystemBase {
   // Empty until the first picture survives the filters. Stays at the last good pose after that,
   // even if later pictures are rejected.
   private Optional<VisionMeasurement> latestMeasurement = Optional.empty();
+
+  // When a vision pose last agreed with the tracked position. Never, until one does.
+  private double lastAgreeingPoseSeconds = Double.NEGATIVE_INFINITY;
+  private int poseResets;
   private String rejectReason = "rejected";
 
   // The last time the newest camera picture contained our hub tag. Kept after a missed frame so
@@ -144,7 +157,9 @@ public class VisionSubsystem extends SubsystemBase {
       visionSim = new VisionSystemSim("limelight");
       visionSim.addAprilTags(FIELD_LAYOUT);
       var cameraProperties = new SimCameraProperties();
-      cameraProperties.setCalibration(1280, 800, Rotation2d.fromDegrees(90));
+      // Limelight 3: 1280x960, about 63 deg wide by 50 deg tall, so about 75 deg diagonal. A wider
+      // simulated lens would see tags the real one cannot.
+      cameraProperties.setCalibration(1280, 960, Rotation2d.fromDegrees(75.3));
       cameraProperties.setCalibError(0.35, 0.10);
       cameraProperties.setFPS(30);
       cameraProperties.setAvgLatencyMs(35);
@@ -166,12 +181,30 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Our hub AprilTag from the newest picture that contained one. Empty when the driver station has
-   * no alliance, the tag has not been seen, or the last sighting is older than
+   * Seconds since a vision pose last agreed with the robot's tracked position (within
+   * POSE_AGREE_METERS and POSE_AGREE_DEGREES), or infinity if none has since power-up, since a
+   * picture disagreed by more than POSE_RESET_METERS or POSE_RESET_DEGREES, or since
+   * {@link #forgetTrustedPose()}. A picture that merely nudges a
+   * badly-off position does not count.
+   */
+  public double secondsSinceTrustedPose() {
+    return Timer.getFPGATimestamp() - lastAgreeingPoseSeconds;
+  }
+
+  /**
+   * Stop trusting the tracked position until a vision pose agrees with it again. Call this when
+   * something else moves the tracked position, like resetting the field-centric heading.
+   */
+  public void forgetTrustedPose() {
+    lastAgreeingPoseSeconds = Double.NEGATIVE_INFINITY;
+  }
+
+  /**
+   * Where our hub's middle is, from the newest picture that showed any of its tags. Empty when the
+   * driver station has no alliance, no hub tag has been seen, or the last sighting is older than
    * {@link frc.robot.Constants.Constants.Score#kMaxSightingAgeSeconds}.
    *
-   * <p>The two tags on our hub both count. If both are in the picture, this is the one closest to
-   * the center, because that is the face we are looking at. The other alliance's tags are ignored.
+   * <p>All of our hub's tags count, on every face. The other alliance's hub is ignored.
    */
   public Optional<HubSighting> getHubSighting() {
     if (latestHub.isEmpty()) {
@@ -249,13 +282,56 @@ public class VisionSubsystem extends SubsystemBase {
       }
 
       VisionMeasurement measurement = accepted.get();
+      if (measurement.timestampSeconds() <= drivetrain.lastPoseResetSeconds()) {
+        // Taken before the pose was last reset (auto start, the Y button, or our own reset), but
+        // only arriving now. Comparing it with the new pose would see a jump that is not real.
+        status = "skipped: taken before a pose reset";
+        continue;
+      }
       latestMeasurement = Optional.of(measurement);
 
-      // Hand the pose to CTRE's pose estimator. The timestamp lets it apply the correction at the
-      // moment the photo was taken, not at the moment we finished reading it. The standard
-      // deviations tell it how hard to pull odometry toward the camera.
-      drivetrain.addVisionMeasurement(
-          measurement.pose(), measurement.timestampSeconds(), measurement.standardDeviations());
+      // How far the robot's tracked position was from this picture, at the moment it was taken.
+      Pose2d tracked =
+          drivetrain.poseAt(measurement.timestampSeconds()).orElse(drivetrain.getPose());
+      double offMeters = tracked.getTranslation().getDistance(measurement.pose().getTranslation());
+      double offDegrees =
+          Math.abs(tracked.getRotation().minus(measurement.pose().getRotation()).getDegrees());
+
+      boolean trusted = secondsSinceTrustedPose() <= Score.kPoseFallbackMaxAgeSeconds;
+      if (measurement.multiTag()
+          && (DriverStation.isDisabled() || !trusted)
+          && (offMeters > POSE_RESET_METERS || offDegrees > POSE_RESET_DEGREES)) {
+        // Far off and sure of it (two or more tags): take the camera's pose outright instead of
+        // creeping toward it. The correction is applied to where the robot is NOW, so motion
+        // since the picture was taken is kept.
+        Pose2d corrected =
+            measurement.pose().transformBy(drivetrain.getPose().minus(tracked));
+        if (DriverStation.isDisabled()) {
+          drivetrain.resetPose(corrected);
+        } else {
+          // While driving: keep the driver's "forward" where it was, then ease it back.
+          drivetrain.resetPoseKeepingDriverForward(corrected);
+        }
+        poseResets++;
+        SmartDashboard.putNumber("Vision/PoseResets", poseResets);
+        offMeters = 0;
+        offDegrees = 0;
+      } else {
+        // Hand the pose to CTRE's pose estimator. The timestamp lets it apply the correction at
+        // the moment the photo was taken, not at the moment we finished reading it. The standard
+        // deviations tell it how hard to pull odometry toward the camera.
+        drivetrain.addVisionMeasurement(
+            measurement.pose(), measurement.timestampSeconds(), measurement.standardDeviations());
+      }
+      // The tracked position becomes trustworthy for aiming when a picture agrees with it
+      // closely, and stops being trustworthy when one disagrees badly. The gap between the two
+      // keeps camera noise (a fast turn, a single far tag) from flipping it back and forth.
+      if (offMeters <= POSE_AGREE_METERS && offDegrees <= POSE_AGREE_DEGREES) {
+        lastAgreeingPoseSeconds = Timer.getFPGATimestamp();
+      } else if (offMeters > POSE_RESET_METERS || offDegrees > POSE_RESET_DEGREES) {
+        forgetTrustedPose();
+      }
+      SmartDashboard.putNumber("Vision/PoseOffMeters", offMeters);
       field.setRobotPose(measurement.pose());
       status = "accepted";
       tagCount = measurement.tagCount();
@@ -268,12 +344,13 @@ public class VisionSubsystem extends SubsystemBase {
   }
 
   /**
-   * Saves our hub tag out of this picture, if one is there. This does not have to be a picture we
-   * trusted for odometry. A single tag can be too messy to move the pose estimate and still be
-   * good enough to tell us which way to turn.
+   * Works out where our hub's middle is from this picture, if any of its tags are in it. This does
+   * not have to be a picture we trusted for odometry. A single tag can be too messy to move the
+   * pose estimate and still be good enough to aim with.
    */
   private void rememberHubTag(PhotonPipelineResult result) {
-    if (DriverStation.getAlliance().isEmpty()) {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    if (alliance.isEmpty()) {
       hubStatus = "no alliance";
       return;
     }
@@ -281,48 +358,80 @@ public class VisionSubsystem extends SubsystemBase {
       hubStatus = "tag not in view";
       return;
     }
+    boolean red = alliance.get() == Alliance.Red;
+    int[] hubTags = red ? RED_HUB_TAG_IDS : BLUE_HUB_TAG_IDS;
+    Translation2d hubCenter = red ? HubMath.RED_HUB_CENTER : HubMath.BLUE_HUB_CENTER;
 
-    PhotonTrackedTarget best = null;
+    Translation2d sum = Translation2d.kZero;
+    Translation2d robotSum = Translation2d.kZero;
+    int used = 0;
+    int bestId = -1;
+    double bestAmbiguity = Double.POSITIVE_INFINITY;
     boolean sawAmbiguousHubTag = false;
+    boolean sawHubTagWithout3d = false;
     for (var target : result.getTargets()) {
-      if (!isAllianceHubTag(target.getFiducialId())) {
+      int id = target.getFiducialId();
+      if (!contains(hubTags, id)) {
         continue;
       }
-      // A high ambiguity means this tag can be solved in two places. Turning toward the wrong
-      // one would aim us away from the hub. Unknown ambiguity (a negative number) is kept.
+      // A high ambiguity means this tag can be solved two ways, facing two different directions.
+      // The hub's middle is found from which way the tag faces, so skip it. Unknown ambiguity (a
+      // negative number) is kept.
       double ambiguity = target.getPoseAmbiguity();
       if (ambiguity > MAX_SINGLE_TAG_AMBIGUITY) {
         sawAmbiguousHubTag = true;
         continue;
       }
-      if (best == null || Math.abs(target.getYaw()) < Math.abs(best.getYaw())) {
-        best = target;
+      var tagPose = FIELD_LAYOUT.getTagPose(id);
+      if (tagPose.isEmpty()) {
+        continue;
+      }
+      Translation2d hub =
+          HubMath.hubFromRobot(target.getBestCameraToTarget(), tagPose.get().toPose2d(), hubCenter);
+      if (hub == null) {
+        sawHubTagWithout3d = true;
+        continue;
+      }
+      sum = sum.plus(hub);
+      robotSum =
+          robotSum.plus(
+              HubMath.robotFieldPose(target.getBestCameraToTarget(), tagPose.get().toPose2d())
+                  .getTranslation());
+      used++;
+      double rank = ambiguity < 0 ? Double.MAX_VALUE : ambiguity;
+      if (bestId < 0 || rank < bestAmbiguity) {
+        bestId = id;
+        bestAmbiguity = rank;
       }
     }
 
-    if (best == null) {
-      hubStatus = sawAmbiguousHubTag ? "tag too ambiguous" : "tag not in view";
+    if (used == 0) {
+      if (sawHubTagWithout3d) {
+        hubStatus = "no 3D solve: turn on 3D mode in the PhotonVision pipeline";
+      } else {
+        hubStatus = sawAmbiguousHubTag ? "tag too ambiguous" : "tag not in view";
+      }
       return;
     }
 
+    Translation2d hub = sum.div(used);
     latestHub =
         Optional.of(
             new HubSighting(
-                best.getFiducialId(),
-                best.getYaw(),
-                HubMath.distanceMeters(best),
+                bestId,
+                used,
+                HubMath.yawDegrees(hub),
+                hub.getNorm(),
+                robotSum.div(used),
                 Timer.getFPGATimestamp()));
     hubStatus = "tracking";
   }
 
-  /** True for the two hub tags on our alliance. The other alliance's hub is not a target. */
-  private static boolean isAllianceHubTag(int fiducialId) {
-    Alliance alliance = DriverStation.getAlliance().orElse(null);
-    if (alliance == Alliance.Red) {
-      return fiducialId == RED_HUB_FIDUCIAL_L || fiducialId == RED_HUB_FIDUCIAL_R;
-    }
-    if (alliance == Alliance.Blue) {
-      return fiducialId == BLUE_HUB_FIDUCIAL_L || fiducialId == BLUE_HUB_FIDUCIAL_R;
+  private static boolean contains(int[] ids, int id) {
+    for (int candidate : ids) {
+      if (candidate == id) {
+        return true;
+      }
     }
     return false;
   }
@@ -341,9 +450,29 @@ public class VisionSubsystem extends SubsystemBase {
     hub.ifPresent(
         sighting -> {
           SmartDashboard.putNumber("Vision/HubTagId", sighting.tagId());
+          SmartDashboard.putNumber("Vision/HubTagCount", sighting.tagCount());
           SmartDashboard.putNumber("Vision/HubYawDegrees", sighting.yawDegrees());
           SmartDashboard.putNumber("Vision/HubDistanceMeters", sighting.distanceMeters());
         });
+  }
+
+  /**
+   * Simulation only: the simulated field has only these AprilTags, like a practice space with just
+   * a hub set up. Pose estimation still uses the full field map.
+   */
+  public void simUseOnlyTags(int[] ids) {
+    if (visionSim == null) {
+      return;
+    }
+    List<AprilTag> tags = new ArrayList<>();
+    for (AprilTag tag : FIELD_LAYOUT.getTags()) {
+      if (contains(ids, tag.ID)) {
+        tags.add(tag);
+      }
+    }
+    visionSim.clearAprilTags();
+    visionSim.addAprilTags(
+        new AprilTagFieldLayout(tags, FIELD_LAYOUT.getFieldLength(), FIELD_LAYOUT.getFieldWidth()));
   }
 
   /**

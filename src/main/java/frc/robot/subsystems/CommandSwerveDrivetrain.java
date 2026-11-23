@@ -1,11 +1,15 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.robot.Constants.Constants.Vision.FORWARD_BLEND_SECONDS;
 
 
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
@@ -20,6 +24,7 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -104,6 +109,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+    /* The standard "forward" for our alliance. */
+    private Rotation2d m_basePerspective = kBlueAlliancePerspectiveRotation;
+    /*
+     * Extra turn on the driver's "forward" after a vision reset while enabled, in radians. It eases
+     * to zero at kForwardBlendRadPerSec, so "forward" returns to m_basePerspective.
+     */
+    private double m_forwardOffsetRad = 0;
+    /* Half a turn (the largest possible offset) eases back in FORWARD_BLEND_SECONDS. */
+    private static final double kForwardBlendRadPerSec = Math.PI / FORWARD_BLEND_SECONDS;
+    private double m_lastPeriodicSeconds = Double.NaN;
 
     /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
@@ -291,13 +306,94 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          */
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
-                setOperatorPerspectiveForward(
-                    allianceColor == Alliance.Red
-                        ? kRedAlliancePerspectiveRotation
-                        : kBlueAlliancePerspectiveRotation
-                );
+                m_basePerspective = allianceColor == Alliance.Red
+                    ? kRedAlliancePerspectiveRotation
+                    : kBlueAlliancePerspectiveRotation;
                 m_hasAppliedOperatorPerspective = true;
             });
+            if (DriverStation.isDisabled()) {
+                // Nobody is driving: go straight back to the standard "forward".
+                m_forwardOffsetRad = 0;
+            }
+        }
+
+        // Ease any leftover "forward" offset from a vision reset back to zero.
+        double now = Timer.getFPGATimestamp();
+        double dt = Double.isNaN(m_lastPeriodicSeconds) ? 0 : MathUtil.clamp(now - m_lastPeriodicSeconds, 0, 0.1);
+        m_lastPeriodicSeconds = now;
+        double step = kForwardBlendRadPerSec * dt;
+        m_forwardOffsetRad = Math.abs(m_forwardOffsetRad) <= step
+            ? 0
+            : m_forwardOffsetRad - Math.copySign(step, m_forwardOffsetRad);
+        applyOperatorForward();
+        SmartDashboard.putNumber("Drive/ForwardOffsetDegrees", Math.toDegrees(m_forwardOffsetRad));
+    }
+
+    /**
+     * Move the tracked pose to {@code newPose} without changing which way the driver's joystick
+     * "forward" points in the real world. The heading jump is added to the driver's forward, then
+     * eases back to the standard alliance direction at a fixed rate (see FORWARD_BLEND_SECONDS).
+     */
+    public void resetPoseKeepingDriverForward(Pose2d newPose) {
+        Rotation2d headingJump = newPose.getRotation().minus(getPose().getRotation());
+        resetPose(newPose);
+        m_forwardOffsetRad = MathUtil.angleModulus(m_forwardOffsetRad + headingJump.getRadians());
+        applyOperatorForward();
+    }
+
+    /*
+     * Every way the tracked pose can be moved by hand records when it happened, so camera pictures
+     * taken before then (still arriving, about 35 ms late) are not compared against the new pose.
+     * PathPlanner resets the pose at the start of every auto; the Y button resets the heading.
+     */
+    private double m_lastPoseResetSeconds = Double.NEGATIVE_INFINITY;
+
+    /** When the tracked pose was last moved by hand (FPGA seconds), or -infinity if never. */
+    public double lastPoseResetSeconds() {
+        return m_lastPoseResetSeconds;
+    }
+
+    @Override
+    public void resetPose(Pose2d pose) {
+        super.resetPose(pose);
+        m_lastPoseResetSeconds = Timer.getFPGATimestamp();
+    }
+
+    @Override
+    public void resetTranslation(Translation2d translation) {
+        super.resetTranslation(translation);
+        m_lastPoseResetSeconds = Timer.getFPGATimestamp();
+    }
+
+    @Override
+    public void resetRotation(Rotation2d rotation) {
+        super.resetRotation(rotation);
+        m_lastPoseResetSeconds = Timer.getFPGATimestamp();
+    }
+
+    @Override
+    public void seedFieldCentric() {
+        super.seedFieldCentric();
+        m_lastPoseResetSeconds = Timer.getFPGATimestamp();
+    }
+
+    @Override
+    public void seedFieldCentric(Rotation2d rotation) {
+        super.seedFieldCentric(rotation);
+        m_lastPoseResetSeconds = Timer.getFPGATimestamp();
+    }
+
+    /** The Y button: clear any easing "forward" offset, then make the robot's facing "forward". */
+    public void seedFieldCentricFromHere() {
+        m_forwardOffsetRad = 0;
+        applyOperatorForward();
+        seedFieldCentric();
+    }
+
+    private void applyOperatorForward() {
+        if (m_hasAppliedOperatorPerspective) {
+            setOperatorPerspectiveForward(
+                m_basePerspective.plus(Rotation2d.fromRadians(m_forwardOffsetRad)));
         }
     }
 
@@ -314,6 +410,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             updateSimState(deltaTime, RobotController.getBatteryVoltage());
         });
         m_simNotifier.startPeriodic(kSimLoopPeriod);
+    }
+
+    /**
+     * Where the robot thought it was at an earlier moment, from the pose history.
+     *
+     * @param timestampSeconds a time on the RoboRIO (FPGA) clock, like a vision timestamp
+     * @return the tracked pose then, or empty if that is older than the history
+     */
+    public Optional<Pose2d> poseAt(double timestampSeconds) {
+        return samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
     }
 
     /**

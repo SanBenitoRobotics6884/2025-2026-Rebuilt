@@ -112,6 +112,8 @@ task teleopSim(type: Test) {
     useJUnitPlatform {
         includeTags 'teleopSim'
     }
+    // Each test class builds its own simulated robot, so give each one a fresh JVM.
+    forkEvery = 1
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
     testLogging {
         showStandardStreams = true

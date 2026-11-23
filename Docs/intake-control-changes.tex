@@ -50,9 +50,11 @@ stop it. The code checks the two lead screws against each other every 10\,ms and
 either jams. The intake roller won't spin until the intake is 75\% out, so its wheels can't rub
 on internal parts.
 
-The right trigger now aims at our hub tag and picks the shooter speed from distance. If the
-Limelight can't see the tag, it falls back to the old fixed 3000 RPM shot with the driver aiming.
-Either way it feeds by itself once the wheels are at speed.
+The right trigger now aims at the middle of our hub and picks the shooter speed from the
+distance, but only inside our ALLIANCE ZONE, where scoring is legal (rule G407). If the Limelight
+can't see a hub tag, the driver aims and the speed comes from the robot's tracked field position.
+Outside our zone, or when the robot can't tell where it is, it is the old fixed 3000 RPM shot
+with the driver aiming (a pass). In every mode it feeds by itself once the wheels are at speed.
 
 It has only run in simulation so far; see the last section for what still needs testing on the
 robot.
@@ -74,7 +76,7 @@ Left trigger  & Intake roller in                     & Intake roller in, but onl
 A             & Reverse intake roller                & Same, also waits for 75\% out \\
 B             & Storage roller + indexer             & No change \\
 X             & Reverse indexer                      & No change \\
-Right trigger & Shooter at a fixed 3000 RPM          & Hub tag in view: auto-aim, RPM from distance. No tag: fixed 3000 RPM, driver aims. Either way it feeds once at speed; intake stows during the shot \\
+Right trigger & Shooter at a fixed 3000 RPM          & In our zone: aims at the hub's middle with RPM from distance (or driver aims, RPM from tracked position). Outside our zone: fixed 3000 RPM, driver aims. Feeds once at speed; intake stows during the shot \\
 \bottomrule
 \end{xltabular}
 
@@ -82,44 +84,76 @@ Right trigger & Shooter at a fixed 3000 RPM          & Hub tag in view: auto-aim
   \item \textbf{Which controller:} mechanism buttons go on the operator controller if both
     controllers are connected when the robot boots; otherwise on the driver controller.
     Unchanged from before.
-  \item \textbf{Right trigger:} see the next section for auto-aim and the fallback.
+  \item \textbf{Right trigger:} see the next section.
 \end{itemize}
 
-\section*{Right trigger: auto-aim with fixed-speed fallback}
+\section*{Right trigger: auto-aim, position, or fixed}
 
-Hold the right trigger to shoot. The robot picks one of two modes on its own, every 20\,ms,
-depending on whether the Limelight has seen our hub AprilTag in the last quarter second.
+Hold the right trigger to shoot. Every 20\,ms the robot picks one of three modes on its own:
 
-\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.9cm} L L}
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.3cm} L L L}
 \toprule
- & \textbf{Hub tag in view: AUTO\_AIM} & \textbf{No hub tag: FIXED (fallback)} \\
+ & \textbf{AUTO\_AIM} & \textbf{POSE} & \textbf{FIXED} \\
 \midrule
 \endhead
-Turning      & Robot turns itself onto the tag; right stick ignored & Right stick turns the robot; driver aims by hand \\
-Driving      & Left stick drives; left bumper = slow mode            & Same \\
-Shooter speed & Set from the measured distance to the tag (tuned close and far shots, straight line between) & Fixed 3000 RPM, the old right-trigger speed \\
-Feeding      & Automatic, once the wheels are within 100 RPM of the target & Same \\
-Intake       & Stows (retracts) at the start of the shot              & Same \\
+When          & In our alliance zone, a hub tag seen in the last quarter second & In our alliance zone, no hub tag, robot's position trusted & Outside our zone (passing), or the robot can't tell where it is \\
+Turning       & Robot turns itself to the hub's middle; right stick ignored & Right stick; driver aims & Right stick; driver aims \\
+Shooter speed & From the measured distance to the hub's middle & From the tracked position to the hub's middle & Fixed 3000 RPM \\
+Driving       & Left stick; left bumper = slow mode & Same & Same \\
+Feeding       & Automatic, once within 100 RPM of the target & Same & Same \\
+Intake        & Stows at the start of the shot & Same & Same \\
 \bottomrule
 \end{xltabular}
 
 \begin{itemize}
-  \item \textbf{Switching:} as soon as the tag is seen, aiming takes over; if it is lost for more
-    than a quarter second, the right stick comes back and the shooter changes to 3000 RPM.
-    Feeding pauses until the wheels reach whichever speed is current.
+  \item \textbf{Aim point:} the middle of the hub. All eight tags on our hub count, two per face.
+    Each tag in view gives an estimate of where the hub's middle is, and they are averaged, so the
+    aim does not jump between tags. The camera's off-center mount is accounted for. The other
+    alliance's hub is never a target.
+  \item \textbf{Close range:} with the Limelight mounted level (as currently set in code), it only
+    sees a hub tag from about 3\,m or more from the hub's middle. Closer, POSE mode still picks the
+    right speed, but the driver aims. Tilting the Limelight up about 25$^\circ$ (a reprinted mount)
+    would let auto-aim work up close.
+  \item \textbf{Why POSE exists:} without it, a close shot with no tag in view would run the fixed
+    3000 RPM and overshoot. When the robot's position is trusted is in the next section.
+  \item \textbf{Switching:} as soon as a hub tag is seen (in our zone), aiming takes over. Feeding
+    pauses until the wheels reach whichever speed is current.
   \item \textbf{Old method:} on the main branch the right trigger only spun the shooter at 3000 RPM
     and the driver fed with B. Now feeding is automatic, and B does not feed while the right
     trigger is held.
   \item \textbf{Release:} letting go stops the shooter and feeder. What the intake does next is
     below.
-  \item \textbf{Aim point:} the robot aims at whichever of our two hub tags is nearer its
-    crosshair, not the middle of the hub. At 2.5\,m the tags are about 8$^\circ$ apart, so shots
-    may land a little left or right of center.
-  \item \textbf{Two controllers:} the operator holds the trigger, but in the fallback the driver's
-    right stick aims. Call out ``no tag'' so the driver knows to aim.
-  \item \textbf{Dashboard:} \dash{Score/Mode} shows AUTO\_AIM or FIXED.
+  \item \textbf{Two controllers:} the operator holds the trigger, but in POSE and FIXED the
+    driver's right stick aims. Call out ``no tag'' or ``passing'' so the driver knows to aim.
+  \item \textbf{Dashboard:} \dash{Score/Mode} shows AUTO\_AIM, POSE or FIXED;
+    \dash{Score/InAllianceZone} shows whether the robot thinks it may score.
 \end{itemize}
 
+\begin{drivenote}{Alliance zone: scoring only from our side (rule G407)}
+The game manual (section 5.3) makes each ALLIANCE ZONE 158.6\,in (about 4.03\,m) deep from that
+alliance's wall, across the full field width; the hub's alliance-wall face sits on its edge.
+Rule G407 (MAJOR FOUL): launching into our hub is only legal with our bumpers partly or fully in
+our alliance zone.
+\begin{itemize}[leftmargin=*]
+  \item The robot counts as in its zone when its \emph{center} is inside, leaving about half a robot
+    of margin for position error.
+  \item With a hub tag in view, the robot works out where it is from the tag itself; otherwise from
+    its trusted tracked position. If it can't tell, it uses FIXED.
+  \item In the neutral zone or the other alliance's zone, every shot is FIXED at 3000 RPM with the
+    driver aiming, even with a hub tag (ours or theirs) clearly in view. That is the passing shot.
+\end{itemize}
+\end{drivenote}
+
+\medskip
+\begin{drivenote}{Tuning the shot: measure to the middle of the hub}
+Shot distances are now measured from the robot's center to the \textbf{middle of the hub}, not to
+the tag on its face. The two placeholder tune points were moved out by the face-to-middle distance
+(about 0.6\,m) so the same spots on the floor still get the same speed. When tuning, measure each
+shot's distance to the hub's middle (or read \dash{Score/PoseDistanceMeters} /
+\dash{Vision/HubDistanceMeters}) and record the RPM that scored.
+\end{drivenote}
+
+\medskip
 \begin{drivenote}{Intake during a right-trigger shot}
 Pulling the trigger always starts stowing the intake. Whether it goes back out on release depends
 only on where it was \emph{when the trigger was pulled}:
@@ -151,25 +185,109 @@ Retracted, or retracting         & Stays in \\
 \end{drivenote}
 
 \medskip
-Simulation of the right trigger in teleop:
+Simulation of the right trigger in teleop (camera level, as currently set in code):
 
-\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{2.9cm} L L}
+\begin{xltabular}{\linewidth}{>{\raggedright\arraybackslash}p{5.0cm} L >{\raggedright\arraybackslash}p{2.6cm} L}
 \toprule
- & \textbf{Facing away from the hub} & \textbf{Facing the hub, 10$^\circ$ off, 2.5\,m} \\
+\textbf{Where the robot is} & \textbf{Camera saw} & \textbf{Mode} & \textbf{Result} \\
 \midrule
 \endhead
-Mode          & FIXED                         & AUTO\_AIM \\
-Shooter       & 3000 RPM target, reached 3002 & 3002 RPM target, reached 3039 \\
-First feed    & 0.41\,s after the trigger     & 0.42\,s after the trigger \\
-Turning       & Right stick turned the robot  & Turned itself from 10$^\circ$ to 0.6$^\circ$ off the tag \\
-Intake after release & Started in, stayed in     & Started in, stayed in \\
+Our zone, facing away from the hub & 2 wall tags & POSE, 3009 RPM & right stick turned it; fed at 0.41\,s \\
+Mid-field, no tags for 11\,s & nothing & FIXED, 3000 RPM & right stick turned it; fed at 0.42\,s \\
+Our zone, facing the hub 10$^\circ$ off & 10 tags, ours 25 and 26 & AUTO\_AIM, 3003 RPM & turned itself to 2.4$^\circ$ off the hub's middle; fed at 0.41\,s \\
+Blue robot in red's zone, facing red's hub & 10 tags, red's hub & FIXED, 3000 RPM & right stick turned it; fed at 0.41\,s \\
+Blue robot in red's zone, passing back & 10 tags, incl.\ our hub's tag 18 from 9.5\,m & FIXED, 3000 RPM & right stick turned it; fed at 0.41\,s \\
+Red robot in blue's zone, facing blue's hub & 10 tags, blue's hub & FIXED, 3000 RPM & right stick turned it; fed at 0.43\,s \\
 \bottomrule
 \end{xltabular}
 
-With the intake fully out before the shot, the simulation stowed it to S1 in 4.18\,s while the
-trigger was held, and it went back out to S2 in 4.30\,s after release.
+In every case the intake started in and stayed in after release. With the intake fully out before
+the shot, it stowed to S1 in 4.18\,s while the trigger was held and went back out to S2 in 4.18\,s
+after release.
 
-\section*{How the extension works now}
+Auto-aim from around the hub in simulation (distances to the hub's middle):
+
+\begin{xltabular}{\linewidth}{L >{\raggedright\arraybackslash}p{2.0cm} r r >{\raggedright\arraybackslash}p{2.3cm} r}
+\toprule
+\textbf{Robot position} & \textbf{Hub tags used} & \textbf{True m} & \textbf{Meas. m} & \textbf{Mode} & \textbf{Aim err.} \\
+\midrule
+\endhead
+Our zone, close tune point           & none       & 2.10 & --   & POSE (2201 RPM) & driver \\
+Our zone                             & none       & 2.60 & --   & POSE (2586 RPM) & driver \\
+Our zone                             & 25, 26     & 3.10 & 3.08 & AUTO\_AIM & 0.0$^\circ$ \\
+Our zone                             & 25, 26     & 3.60 & 3.55 & AUTO\_AIM & 0.0$^\circ$ \\
+Our zone, far tune point             & 25, 26     & 4.10 & 4.09 & AUTO\_AIM & 0.0$^\circ$ \\
+Our zone, turned 20$^\circ$          & 25, 26     & 3.10 & 3.13 & AUTO\_AIM & 1.8$^\circ$ \\
+Our zone, 1\,m to the side           & 21, 24, 25, 26 & 3.26 & 3.25 & AUTO\_AIM & 0.3$^\circ$ \\
+Beside the hub / center-field side (outside our zone) & 18--27 & 3.10 & -- & FIXED & driver \\
+Red: own zone / beside its hub       & 9, 10 / 2, 11 & 3.10 & 3.09 / -- & AUTO\_AIM / FIXED & 0.0$^\circ$ / driver \\
+\bottomrule
+\end{xltabular}
+
+Practice-field simulation: only one hub's tags, robot powered up believing it was 6--16\,m and
+30--150$^\circ$ from where it really was, then driving in to the close tune point:
+
+\begin{xltabular}{\linewidth}{L >{\raggedright\arraybackslash}p{3.0cm} >{\raggedright\arraybackslash}p{3.2cm}}
+\toprule
+\textbf{Case} & \textbf{Close shot} & \textbf{Driver's forward} \\
+\midrule
+\endhead
+Blue, looked at the hub while disabled & POSE 2147 RPM (2143 needed) & never changed \\
+Blue, enabled right away & POSE 2158 RPM (2149 needed) & at most 1$^\circ$ per 20\,ms; back to normal \\
+Red, looked at the hub while disabled & POSE 2152 RPM (2146 needed) & never changed \\
+Red, enabled right away (150$^\circ$ off) & POSE 2152 RPM (2146 needed) & at most 1$^\circ$ per 20\,ms; back to normal \\
+Blue-tag hub, Driver Station on red & FIXED 3000 RPM (not in red's zone) & never changed \\
+\bottomrule
+\end{xltabular}
+
+The simulation uses an ideal camera and field; it does not prove the real Limelight is set up
+right. See the checklist at the end.
+
+\section*{Robot position: when it is trusted, and practice fields}
+
+POSE mode and the alliance-zone check rely on the robot knowing where it is. It tracks that with
+the wheels, and corrects it from any AprilTag the Limelight sees (any tag on the field, any
+alliance). At power-up it thinks it is at a corner of the field facing 0$^\circ$; in a match, the
+auto routine sets the right position at the start.
+
+\begin{itemize}
+  \item \textbf{Trusted:} a camera position agrees with the tracked one within 0.25\,m and
+    5$^\circ$. It stays trusted for 10\,s after the last agreeing picture.
+  \item \textbf{Not trusted:} after power-up, after pressing Y, after a camera picture disagrees by
+    more than 0.5\,m or 15$^\circ$, or 10\,s without an agreeing picture. Close shots then use FIXED
+    instead of guessing.
+  \item \textbf{Snap:} when the position is not trusted and the Limelight sees two or more tags at
+    once that disagree by more than 0.5\,m or 15$^\circ$, the robot jumps straight to the camera's
+    position. This also covers a robot code restart in the middle of a match.
+  \item \textbf{The driver's ``forward'' never jumps.} If the snap happens while enabled, joystick
+    ``forward'' first keeps pointing the same way in the room, then eases back to the normal
+    alliance direction at a fixed 36$^\circ$ per second: a few degrees settle before anyone
+    notices; a half-turn takes 5\,s and feels like a slow drift (a straight push can bend into a U)
+    to steer through. While disabled it goes straight back to normal.
+  \item \textbf{Y button} (reset field-centric heading): makes the robot's current facing
+    ``forward'', stops any easing, and stops trusting the position until a picture agrees again.
+  \item \textbf{Picking the alliance:} the robot only knows its alliance from the Driver Station
+    (the field system in a match; the \textbf{Team Station} drop-down in practice). Without one, it
+    uses FIXED.
+\end{itemize}
+
+\begin{drivenote}{Practicing with only a hub set up}
+\begin{itemize}[leftmargin=*]
+  \item Tag the practice hub with one alliance's tag IDs from the 2026 field map, on the right
+    faces and at the right height and spacing: blue 18--21 and 24--27, red 2--5 and 8--11. Two tags
+    per face.
+  \item Set the Driver Station Team Station to that same alliance. (A blue-tag hub with the
+    Driver Station on red simply gives FIXED shots, because the robot is not in the red zone.)
+  \item Before enabling, let the robot sit for a second or two where the Limelight can see a face
+    of the hub with both tags. It snaps to the right position while disabled, and close shots use
+    POSE from then on.
+  \item Enabling without that also works: the robot snaps as soon as it sees two hub tags, and
+    ``forward'' eases back as above.
+\end{itemize}
+\end{drivenote}
+
+\medskip
+\section*{How the extension works now}\section*{How the extension works now}
 
 The intake now runs itself to a sensor after one press, instead of chasing fixed motor
 positions while a button is held.
@@ -203,7 +321,7 @@ A CTRE CANdi with two limit sensors replaces the old single limit switch on the 
 CANdi S1 & Intake fully retracted & Ends a retract; zeroes both screw encoders; marks the intake ``homed'' \\
 CANdi S2 & Intake fully extended, 11.75\,in from S1 & Ends an extend; always allows the intake roller \\
 Kraken X60 encoders (both screws) & Built into the screw motors & Tracks position between sensors and checks the two screws stay together \\
-Limelight (PhotonVision) & Camera on the robot & Finds our hub AprilTag for aiming and shot distance; also corrects odometry \\
+Limelight (PhotonVision) & Camera on the robot & Finds any of our hub's eight AprilTags to aim at the hub's middle and measure distance; any tag on the field also corrects the robot's tracked position (used by POSE mode) \\
 \bottomrule
 \end{xltabular}
 
@@ -310,7 +428,14 @@ These are the new values to watch on the dashboard.
 \dash{Intake/ExtendedPercent} & How far out the intake is \\
 \dash{Intake/LeftPos}, \dash{Intake/RightPos}, \dash{Intake/Apart} & Each screw's position in motor turns, and the gap between them \\
 \dash{Intake/SensorsOK} & False means the encoder or CANdi readings failed \\
-\dash{Score/TargetRpm}, \dash{Score/ShooterRpm}, \dash{Score/Feeding} & Shot RPM wanted vs measured, and whether a ball is being fed; \dash{Score/Mode} shows AUTO\_AIM or FIXED (fallback) \\
+\dash{Score/TargetRpm}, \dash{Score/ShooterRpm}, \dash{Score/Feeding} & Shot RPM wanted vs measured, and whether a ball is being fed \\
+\dash{Score/Mode} & AUTO\_AIM, POSE or FIXED \\
+\dash{Score/InAllianceZone} & The robot thinks it is in our alliance zone (may score) \\
+\dash{Drive/ForwardOffsetDegrees} & How far joystick ``forward'' still is from normal after a snap while enabled \\
+\dash{Vision/PoseResets}, \dash{Vision/PoseOffMeters} & Number of snaps; how far the last camera position was from the tracked one \\
+\dash{Score/PoseDistanceMeters} & Distance from the robot's tracked position to the hub's middle \\
+\dash{Vision/Connected} & False: Limelight off, unplugged, or camera name mismatch \\
+\dash{Vision/HubStatus}, \dash{Vision/HubDistanceMeters} & Whether a hub tag is in view (or why not), and the measured distance to the hub's middle \\
 \bottomrule
 \end{xltabular}
 
@@ -344,18 +469,33 @@ match:
     each press moves at most 1.4\,in
   \item Hold left trigger during an extend: the roller starts at about 75\% out and stops when
     the intake retracts past it
-  \item Hub aiming and shot RPM: the distance/RPM pairs are placeholders and need tuning on the
-    field
+  \item Limelight runs PhotonVision (not the stock Limelight software), the camera is named
+    \texttt{Camera\_\allowbreak Module\_\allowbreak v1}, and \dash{Vision/Connected} is true
+  \item Pipeline 0 is an AprilTag pipeline with 3D mode and multi-tag on, using the 2026 field map
+    that matches the event (welded or AndyMark); the camera is calibrated at that resolution
+  \item Measure the Limelight mount (forward, left, height, tilt) and update the camera constants;
+    decide on a 25$^\circ$ up-tilt mount
+  \item Shot RPM: the two distance/RPM pairs are placeholders. Tune them on the field, measuring
+    to the hub's middle
   \item Shooter reaches about 3000 RPM and holds it (new speed feedforward; assumes Kraken X60
     shooter motors)
-  \item Cover the camera, hold the right trigger: \dash{Score/Mode} reads FIXED, the right stick
-    turns the robot, and it feeds once at speed
-  \item Uncover the camera mid-shot: it switches to AUTO\_AIM and turns onto the tag
+  \item Turn away from the hub near it, hold the right trigger: \dash{Score/Mode} reads POSE and
+    the RPM matches the distance; the right stick turns the robot
+  \item Drive into the neutral zone and the other alliance's zone and hold the right trigger.
+    Expect FIXED at 3000 RPM and no auto-aim, even facing a hub, and
+    \dash{Score/InAllianceZone} false
+  \item Drive across the starting line: \dash{Score/InAllianceZone} should flip as the robot's
+    center crosses it
+  \item Power up away from the hub and enable right away: once it sees two hub tags it snaps
+    (\dash{Vision/PoseResets} counts up) and ``forward'' eases back without jumping
+  \item Unplug the Limelight for over 10\,s, hold the right trigger: FIXED at 3000 RPM
+  \item Turn back toward the hub mid-shot: it switches to AUTO\_AIM and turns onto the hub's
+    middle, from each side of the hub
   \item Extend fully, hold the right trigger until the intake is in, release: it goes back out to
     S2. Repeat starting retracted: it stays in
   \item Watch a ball feed while the intake is still stowing; confirm nothing catches
-  \item Check where auto-aim shots land relative to the hub center (it aims at one of the two
-    tags)
+  \item Check shots land centered; if they land consistently to one side, adjust the aim offset
+    constant
   \item Run each auto on the real robot and time it, especially ``Rightstart to Mid collcect then
     shoot''
 \end{checklist}

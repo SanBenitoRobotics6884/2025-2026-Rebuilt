@@ -7,80 +7,158 @@ package frc.robot.subsystems.vision;
 import static frc.robot.Constants.Constants.Score.*;
 import static frc.robot.Constants.Constants.Vision.*;
 
-import org.photonvision.targeting.PhotonTrackedTarget;
-
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 
 /**
- * The arithmetic for shooting at one hub AprilTag. No motors and no camera live here, so the
- * steps can be read on their own.
+ * The arithmetic for shooting at the hub. No motors and no camera live here, so the steps can be
+ * read on their own.
  *
  * <ol>
- *   <li>Measure the distance from the robot to the tag, along the floor.
+ *   <li>Find the middle of the hub relative to the robot, from any hub AprilTag the camera sees.
  *   <li>Turn that distance into a shooter RPM. The same straight line is used at every distance,
  *       so a measured distance is not replaced with a closer or farther one.
- *   <li>Turn toward the tag until it sits in the middle of the camera.
- *   <li>Feed a ball only once the wheels have actually reached that RPM. They are heavy and take
- *       time to speed up. Feeding earlier throws the ball short.
+ *   <li>Turn until the middle of the hub is straight ahead.
+ *   <li>Feed a ball only once the wheels are close to that RPM.
  * </ol>
  */
 public final class HubMath {
   private HubMath() {}
 
-  /**
-   * Floor distance from the center of the robot to this tag, in meters.
-   *
-   * <p>The camera's 3D solve is used first. That offset is in camera coordinates (forward, left,
-   * up), so it is rotated into the robot's coordinates and the height is ignored. What is left is
-   * the distance along the carpet, which is what the shot arc depends on.
-   *
-   * <p>If the camera did not solve a 3D position, this falls back to the old triangle: the tag is
-   * a known height above the camera, and the camera reports the angle up to the tag. Not-a-number
-   * means we still know which way to turn, but we do not know how hard to shoot.
-   */
-  public static double distanceMeters(PhotonTrackedTarget target) {
-    double fromCamera = horizontalDistanceMeters(target.getBestCameraToTarget().getTranslation());
-    if (Double.isFinite(fromCamera)) {
-      return fromCamera;
-    }
-    return distanceFromPitch(target.getPitch());
+  /** Middle of the blue hub on the floor, in field coordinates. */
+  public static final Translation2d BLUE_HUB_CENTER = hubCenter(BLUE_HUB_TAG_IDS);
+
+  /** Middle of the red hub on the floor, in field coordinates. */
+  public static final Translation2d RED_HUB_CENTER = hubCenter(RED_HUB_TAG_IDS);
+
+  /** Middle of our alliance's hub. */
+  public static Translation2d hubCenter(boolean red) {
+    return red ? RED_HUB_CENTER : BLUE_HUB_CENTER;
+  }
+
+  /** How the right-trigger shot picks its speed and who aims. */
+  public enum ShotMode {
+    /** In our zone with a hub tag in view: the robot aims itself, the distance sets the RPM. */
+    AUTO_AIM,
+    /** In our zone (by the trusted tracked position), no hub tag: the driver aims. */
+    POSE,
+    /** Outside our zone, or no way to tell: fixed speed, the driver aims. Also the pass shot. */
+    FIXED
   }
 
   /**
-   * Floor distance for a camera-to-tag offset. The offset is in the camera's coordinates.
-   * Returns not-a-number when the camera did not actually solve a position.
+   * Picks the shot mode. Scoring is only legal from our ALLIANCE ZONE (rule G407), so both
+   * distance-based modes also require knowing the robot is in it.
+   *
+   * @param hubInView a hub tag was seen within kMaxSightingAgeSeconds
+   * @param sightingInZone the robot's position worked out from that hub tag is in our zone
+   * @param secondsSincePoseFix time since a vision pose last agreed with the tracked position
+   * @param poseDistanceMeters distance from the tracked position to our hub's middle, or NaN when
+   *     unknown (no alliance)
+   * @param poseInZone the tracked position is in our zone
    */
-  public static double horizontalDistanceMeters(Translation3d cameraToTag) {
-    if (cameraToTag.getNorm() < 1e-3) {
-      return Double.NaN;
+  public static ShotMode shotMode(
+      boolean hubInView,
+      boolean sightingInZone,
+      double secondsSincePoseFix,
+      double poseDistanceMeters,
+      boolean poseInZone) {
+    if (hubInView) {
+      // The hub tag places the robot more surely than the tracked position, so it decides.
+      return sightingInZone ? ShotMode.AUTO_AIM : ShotMode.FIXED;
     }
-
-    // ROBOT_TO_CAMERA is where the Limelight is bolted. Rotating the offset puts it in the robot's
-    // coordinates, and adding the bolt position moves the measurement from "in front of the lens"
-    // to "from the center of the robot."
-    Translation3d fromRobot =
-        ROBOT_TO_CAMERA
-            .getTranslation()
-            .plus(cameraToTag.rotateBy(ROBOT_TO_CAMERA.getRotation()));
-    return Math.hypot(fromRobot.getX(), fromRobot.getY());
+    if (secondsSincePoseFix <= kPoseFallbackMaxAgeSeconds
+        && Double.isFinite(poseDistanceMeters)
+        && poseDistanceMeters > 0
+        && poseInZone) {
+      return ShotMode.POSE;
+    }
+    return ShotMode.FIXED;
   }
 
   /**
-   * Backup distance, in meters, from the angle of the tag in the picture.
-   *
-   * <p>{@code targetPitchDegrees} is positive when the tag is above the crosshair. The camera
-   * height and the tag height are constants, so the floor distance is the adjacent side of a
-   * right triangle: opposite (height) divided by tan(angle).
+   * True when the robot's center is inside our ALLIANCE ZONE: within kAllianceZoneDepthMeters of
+   * our own alliance wall (blue at x = 0, red at the far end).
    */
-  public static double distanceFromPitch(double targetPitchDegrees) {
-    double angleRadians = HUB_CAM_PITCH + Units.degreesToRadians(targetPitchDegrees);
-    // A tag straight ahead, level with the camera, makes this triangle unusable.
-    if (Math.abs(angleRadians) < Units.degreesToRadians(1.0)) {
-      return Double.NaN;
+  public static boolean inAllianceZone(Translation2d robotCenter, boolean red) {
+    return red
+        ? robotCenter.getX() >= FIELD_LAYOUT.getFieldLength() - kAllianceZoneDepthMeters
+        : robotCenter.getX() <= kAllianceZoneDepthMeters;
+  }
+
+  /**
+   * Where the robot is on the field, worked out from one tag's 3D solve and where the field map
+   * puts that tag. Independent of the tracked position, so it is right even before vision has
+   * corrected odometry.
+   */
+  public static Pose2d robotFieldPose(Transform3d cameraToTag, Pose2d tagFieldPose) {
+    Transform3d robotToTag = ROBOT_TO_CAMERA.plus(cameraToTag);
+    Transform2d robotToTag2d =
+        new Transform2d(
+            robotToTag.getTranslation().toTranslation2d(),
+            new Rotation2d(robotToTag.getRotation().getZ()));
+    return tagFieldPose.transformBy(robotToTag2d.inverse());
+  }
+
+  /**
+   * Middle of the hub that carries these tags: halfway between its opposite faces, from where the
+   * field map puts each tag.
+   */
+  public static Translation2d hubCenter(int[] tagIds) {
+    double minX = Double.POSITIVE_INFINITY;
+    double maxX = Double.NEGATIVE_INFINITY;
+    double minY = Double.POSITIVE_INFINITY;
+    double maxY = Double.NEGATIVE_INFINITY;
+    for (int id : tagIds) {
+      Translation2d tag = FIELD_LAYOUT.getTagPose(id).orElseThrow().toPose2d().getTranslation();
+      minX = Math.min(minX, tag.getX());
+      maxX = Math.max(maxX, tag.getX());
+      minY = Math.min(minY, tag.getY());
+      maxY = Math.max(maxY, tag.getY());
     }
-    return (HUB_APRIL_TAG_HEIGHT - CAM_HEIGHT) / Math.tan(angleRadians);
+    return new Translation2d((minX + maxX) / 2.0, (minY + maxY) / 2.0);
+  }
+
+  /**
+   * Where the middle of the hub is, relative to the robot center, from one tag's 3D solve.
+   *
+   * <p>The camera reports where the tag is and which way it faces. {@code ROBOT_TO_CAMERA} turns
+   * that into robot coordinates. The field map says where the hub's middle is relative to that
+   * tag, so adding that offset (turned the way the tag faces) gives the hub's middle. This works
+   * from any face of the hub, and it already accounts for the camera being off-center.
+   *
+   * @param cameraToTag the tag's position and facing as the camera solved it
+   * @param tagFieldPose where the field map puts that tag
+   * @param hubCenterField the hub's middle, in field coordinates
+   * @return the hub's middle in robot coordinates (+X forward, +Y left, meters), or null when the
+   *     camera did not solve a 3D position (pipeline not in 3D mode)
+   */
+  public static Translation2d hubFromRobot(
+      Transform3d cameraToTag, Pose2d tagFieldPose, Translation2d hubCenterField) {
+    if (cameraToTag.getTranslation().getNorm() < 1e-3) {
+      return null;
+    }
+    Transform3d robotToTag = ROBOT_TO_CAMERA.plus(cameraToTag);
+    Translation2d tagFromRobot = robotToTag.getTranslation().toTranslation2d();
+    Rotation2d tagFacingInRobot = new Rotation2d(robotToTag.getRotation().getZ());
+    Translation2d hubFromTag =
+        hubCenterField
+            .minus(tagFieldPose.getTranslation())
+            .rotateBy(tagFieldPose.getRotation().unaryMinus());
+    return tagFromRobot.plus(hubFromTag.rotateBy(tagFacingInRobot));
+  }
+
+  /**
+   * Degrees the hub is off straight ahead, positive to the right (the same sign PhotonVision uses
+   * for a tag's yaw).
+   */
+  public static double yawDegrees(Translation2d hubFromRobot) {
+    return -Math.toDegrees(Math.atan2(hubFromRobot.getY(), hubFromRobot.getX()));
   }
 
   /**
@@ -122,15 +200,15 @@ public final class HubMath {
   }
 
   /**
-   * How far off center the tag is, after the shooter-to-camera offset. Positive means the tag is
-   * to the right of where we want it.
+   * How far off center the hub is, after kAimOffsetDegrees. Positive means the hub is to the
+   * right of where we want it.
    */
   public static double aimErrorDegrees(double yawDegrees) {
     return yawDegrees - kAimOffsetDegrees;
   }
 
   /**
-   * Turn speed, in radians per second, that aims the robot at the tag.
+   * Turn speed, in radians per second, that aims the robot at the middle of the hub.
    *
    * <p>PhotonVision's yaw is positive when the tag is to the right of the camera. The swerve
    * drive treats a positive rotation as counter-clockwise, which is a left turn. The minus sign

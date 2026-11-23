@@ -114,15 +114,45 @@ public final class Constants {
      */
     public static final double MAX_MEASUREMENT_LATENCY_SECONDS = 0.5;
 
-    /** Hub measurements. */
-    public static final double HUB_APRIL_TAG_HEIGHT = Units.inchesToMeters(44.25);
-    public static final double HUB_CAM_PITCH = Units.degreesToRadians(0);
+    /**
+     * A picture with two or more tags that disagrees with the robot's tracked position by more
+     * than this many meters (or POSE_RESET_DEGREES) replaces it outright, while disabled or while
+     * the tracked position is not trusted (see POSE_AGREE_METERS). Covers powering up somewhere
+     * other than where the robot thinks, a code restart mid-match, and pressing Y. While enabled,
+     * the driver's "forward" is kept where it was and eases back (see FORWARD_BLEND_SECONDS). Any
+     * picture that disagrees this much also ends trust in the tracked position.
+     */
+    public static final double POSE_RESET_METERS = 0.5;
 
-    /** Hub fiducial ids. */
-    public static final int RED_HUB_FIDUCIAL_L = 9;
-    public static final int RED_HUB_FIDUCIAL_R = 10;
-    public static final int BLUE_HUB_FIDUCIAL_L = 25;
-    public static final int BLUE_HUB_FIDUCIAL_R = 26;
+    /** Heading disagreement, in degrees, that triggers the reset described at POSE_RESET_METERS. */
+    public static final double POSE_RESET_DEGREES = 15.0;
+
+    /**
+     * The tracked position only counts as trustworthy (for the right trigger's POSE mode) when a
+     * vision pose agrees with it within this many meters and POSE_AGREE_DEGREES.
+     */
+    public static final double POSE_AGREE_METERS = 0.25;
+
+    /** Heading agreement, in degrees, for POSE_AGREE_METERS. */
+    public static final double POSE_AGREE_DEGREES = 5.0;
+
+    /**
+     * After a vision reset while enabled, the driver's field-centric "forward" first stays exactly
+     * where it was, then eases back to the standard alliance direction at a fixed rate: the largest
+     * possible offset (half a turn) takes this many seconds, smaller ones proportionally less, so a
+     * few degrees settle before anyone notices. The controls never jump; a large offset is a slow
+     * drift the driver steers through.
+     */
+    public static final double FORWARD_BLEND_SECONDS = 5.0;
+
+    /**
+     * Every AprilTag on the blue hub: two on each of its four faces, from the 2026 field map. Any
+     * of them can be used to find the middle of the hub, so the robot can aim from any side.
+     */
+    public static final int[] BLUE_HUB_TAG_IDS = {18, 19, 20, 21, 24, 25, 26, 27};
+
+    /** Every AprilTag on the red hub, two per face, from the 2026 field map. */
+    public static final int[] RED_HUB_TAG_IDS = {2, 3, 4, 5, 8, 9, 10, 11};
   }
 
   public static final class Intake {
@@ -294,16 +324,16 @@ public final class Constants {
    */
   public static final class Score {
     /**
-     * The yaw we treat as "centered," in degrees. 0 means the tag should sit on the crosshair.
-     * A positive number means the robot stops turning with the tag that far to the right of the
-     * crosshair. Use this when the shooter does not point the same direction as the camera.
+     * The yaw we treat as "centered," in degrees. 0 means the middle of the hub is straight ahead
+     * of the robot's center. A positive number means the robot stops turning with the hub that far
+     * to the right. Use this if shots consistently land to one side.
      */
     public static final double kAimOffsetDegrees = 0.0;
 
     /**
-     * How hard we turn toward the tag. The unit is "radians per second of turning, per radian the
-     * tag is off center." Higher aims faster. Too high and the robot swings past the tag and
-     * wobbles. Too low and it aims slowly.
+     * How hard we turn toward the hub. The unit is "radians per second of turning, per radian the
+     * hub is off center." Higher aims faster. Too high and the robot swings past and wobbles. Too
+     * low and it aims slowly.
      */
     public static final double kTurnP = 5.0;
 
@@ -314,14 +344,17 @@ public final class Constants {
      */
     public static final double kMaxShooterRpm = 6000.0;
 
-    /** A tuned close shot. Distance is meters along the floor, from the robot center to the tag. */
-    public static final double kCloseDistanceMeters = 1.5;
+    /**
+     * A tuned close shot. Distance is meters along the floor, from the robot center to the MIDDLE
+     * of the hub (not to the tag on its face). Measure it that way when tuning.
+     */
+    public static final double kCloseDistanceMeters = 2.1;
 
     /** Shooter speed, in rotations per minute, that scored from {@link #kCloseDistanceMeters}. */
     public static final double kCloseRpm = 2200.0;
 
-    /** A tuned far shot. */
-    public static final double kFarDistanceMeters = 3.5;
+    /** A tuned far shot, measured the same way as {@link #kCloseDistanceMeters}. */
+    public static final double kFarDistanceMeters = 4.1;
 
     /** Shooter speed, in rotations per minute, that scored from {@link #kFarDistanceMeters}. */
     public static final double kFarRpm = 3800.0;
@@ -339,6 +372,24 @@ public final class Constants {
      * shooter off and on. Make it long enough to cover a few missed frames.
      */
     public static final double kMaxSightingAgeSeconds = 0.25;
+
+    /**
+     * With no hub tag in view, the shot distance can come from the robot's tracked field position
+     * instead (wheels, corrected by any AprilTag vision). That position is trusted for this long
+     * after the last vision pose that agreed with it (Vision.POSE_AGREE_METERS); wheel tracking
+     * slowly drifts. After that, or before any agreeing vision pose, the shot falls back to the
+     * fixed kShooterVelocityRps.
+     */
+    public static final double kPoseFallbackMaxAgeSeconds = 10.0;
+
+    /**
+     * Depth of each ALLIANCE ZONE from its ALLIANCE WALL, from the 2026 game manual section 5.3.
+     * Rule G407 (MAJOR FOUL): a robot may launch into its HUB only with its bumpers partially or
+     * fully inside its ALLIANCE ZONE. The right trigger only aims or picks a distance-based RPM
+     * while the robot's center is inside, which leaves about half a robot of margin for position
+     * error; anywhere else it uses the fixed kShooterVelocityRps (a pass).
+     */
+    public static final double kAllianceZoneDepthMeters = Units.inchesToMeters(158.6);
   }
 
   public static final class OperatorConstants {
